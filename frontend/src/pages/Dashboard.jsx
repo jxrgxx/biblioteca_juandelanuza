@@ -8,11 +8,19 @@ function Dashboard({ user, onLogout }) {
 
   useEffect(() => {
     const cargarLibros = async () => {
+      const token = localStorage.getItem('token_lanuza');
       try {
-        const res = await axios.get('http://localhost:3001/libros');
+        const res = await axios.get('http://localhost:3001/libros', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
         setLibros(res.data);
       } catch (error) {
         console.error("Error cargando libros", error);
+        if(error.response?.status === 401 || error.response?.status === 403) {
+          onLogout();
+        }
       } finally {
         setLoading(false);
       }
@@ -39,7 +47,7 @@ function Dashboard({ user, onLogout }) {
               onClick={onLogout}
               className="bg-red-50 text-red-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-100 transition"
             >
-              Salir
+              Cerrar sesion
             </button>
           </div>
         </div>

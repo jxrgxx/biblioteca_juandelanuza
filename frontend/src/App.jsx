@@ -4,22 +4,31 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 
 function App() {
-  // Inicializamos el usuario intentando leerlo de localStorage
   const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem('user_lanuza');
-    return savedUser ? JSON.parse(savedUser) : null;
+
+    if(savedUser && savedUser !== 'undefined') {
+      try {
+        return JSON.parse(savedUser);
+      } catch (e) {
+        return null;
+      }
+    } 
+
+    return null;
   });
 
-  // Función para guardar el usuario al loguearse
-  const handleLogin = (userData) => {
-    setUser(userData);
-    localStorage.setItem('user_lanuza', JSON.stringify(userData));
+  const handleLogin = (data) => {
+    setUser(data.user);
+    localStorage.setItem('user_lanuza', JSON.stringify(data.user));
+    localStorage.setItem('token_lanuza', data.token);
   };
 
-  // Función para borrar el usuario al salir
   const handleLogout = () => {
     setUser(null);
     localStorage.removeItem('user_lanuza');
+    localStorage.removeItem('token_lanuza');
+
   };
 
   return (

@@ -1,5 +1,4 @@
 function LibroCard({ libro }) {
-  // Colores dinámicos según el estado
   const statusStyles = {
     Disponible: "bg-green-100 text-green-700 border-green-200",
     Prestado: "bg-orange-100 text-orange-700 border-orange-200",
