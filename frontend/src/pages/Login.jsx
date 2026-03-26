@@ -1,117 +1,139 @@
-import { useState } from 'react'
-import axios from 'axios'
-import  { useNavigate } from 'react-router-dom'
-import CryptoJS from 'crypto-js'
-import { Eye, EyeOff, Loader2 } from 'lucide-react'
+import { useState } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import CryptoJS from 'crypto-js';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 
 function Login({ onLoginSuccess }) {
-  const [showPassword, setShowPassword] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [correo, setCorreo] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const navigate = useNavigate()
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [correo, setCorreo] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
-    e.preventDefault()
-    setLoading(true)
+    e.preventDefault();
+    setLoading(true);
     setError('');
+
     try {
-      const passwordHassed = CryptoJS.SHA256(password.trim()).toString(CryptoJS.enc.Hex)
+      // Cifrado de contraseña
+      const passwordHashed = CryptoJS.SHA256(password.trim()).toString(CryptoJS.enc.Hex);
 
       const res = await axios.post('http://localhost:3001/login', {
         correo: correo,
-        contrasenya: passwordHassed
-      })
-      
+        contrasenya: passwordHashed,
+      });
+
       if (res.data.success) {
-        onLoginSuccess(res.data)
-        navigate('/dashboard')
+        onLoginSuccess(res.data);
+        navigate('/dashboard');
       }
     } catch (err) {
       const mensajeError = err.response?.data?.message || 'Credenciales incorrectas';
       setError(mensajeError);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <div 
-      className="min-h-screen flex items-center justify-center p-4 font-sans bg-cover bg-center bg-no-repeat relative"
-      style={{ backgroundImage: "url('/wallpaper_libros.jpg')" }}
+    <div
+      className="relative flex items-center justify-center min-h-screen p-4 font-sans bg-center bg-no-repeat bg-cover"
+      style={{ backgroundImage: "url('/foto_entrada.jpg')" }}
     >
-      <div className="absolute inset-0 bg-indigo-900/40"></div>
+      {/* Capa de fondo oscura (Overlay) */}
+      <div className="absolute inset-0 bg-indigo-900/40 backdrop-blur-sm"></div>
 
       {/* CONTENEDOR LOGIN */}
-      <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md border-t-8 border-[#7F252E] relative z-10">
+      <div className="relative z-10 w-full max-w-md p-8 bg-white border-t-8 border-[#7F252E] shadow-2xl rounded-2xl">
         
         {/* LOGO Y TÍTULO */}
-        <div className="text-center mb-8">
-          <img 
+        <div className="mb-8 text-center">
+          <img
             src="/juan_de_lanuza_logo.png"
-            alt="Logo Colegio Juan de Lanuza" 
-            className="h-24 mx-auto mb-4" 
+            alt="Logo Colegio Juan de Lanuza"
+            className="h-24 mx-auto mb-4"
           />
-          <p className="text-slate-500 mt-1 italic text-sm font-medium">
+          <p className="font-lanuza font-medium text-[#7F252E] text-sm uppercase tracking-wider">
             Biblioteca Juan de Lanuza
           </p>
         </div>
-        
-        <form onSubmit={handleLogin} className="space-y-4 text-slate-800">
+
+        <form onSubmit={handleLogin} className="space-y-5 text-slate-800">
           
+          {/* CAMPO CORREO */}
           <div>
-            <label className="block text-sm font-bold text-slate-700">Correo</label>
-            <input 
-              type="email" 
-              className="w-full mt-1 p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition bg-slate-50"
-              placeholder="tu_correo@juandelanuza.org" 
+            <label className="block text-sm font-medium text-[#7F252E] font-lanuza mb-1">
+              Correo Electrónico
+            </label>
+            <input
+              type="email"
+              className="w-full p-3 transition border outline-none border-slate-200 rounded-xl bg-slate-50 focus:ring-1 focus:ring-[#7F252E] focus:border-[#7F252E]"
+              placeholder="tu_correo@juandelanuza.org"
               value={correo}
               onChange={(e) => setCorreo(e.target.value)}
               required
             />
           </div>
 
+          {/* CAMPO CONTRASEÑA */}
           <div>
-            <label className="block text-sm font-bold text-slate-700">Contraseña</label>
-            <div className="relative mt-1">
+            <label className="block text-sm font-medium text-[#7F252E] font-lanuza mb-1">
+              Contraseña
+            </label>
+            <div className="relative">
               <input
-                type={showPassword ? "text" : "password"} 
-                className="w-full p-3 pr-12 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition bg-slate-50"
+                type={showPassword ? "text" : "password"}
+                className="w-full p-3 pr-12 transition border outline-none border-slate-200 rounded-xl bg-slate-50 focus:ring-1 focus:ring-[#7F252E] focus:border-[#7F252E]"
                 placeholder="••••••••••••••"
-                value={password} 
-                onChange={(e) => setPassword(e.target.value)} 
-                required 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
               />
-              <button 
+              <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition"
+                className="absolute text-slate-400 right-3 top-1/2 -translate-y-1/2 hover:text-[#7F252E] transition"
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
           </div>
 
+          {/* MENSAJE DE ERROR */}
           {error && (
             <div className="flex justify-center pt-2">
-              <p className="text-red-500 text-sm font-extrabold animate-bounce bg-red-50 px-4 py-1 rounded-full border border-red-100">
+              <p className="px-4 py-1 text-sm font-extrabold text-red-500 border border-red-100 shadow-sm animate-bounce bg-red-50 rounded-full">
                 ⚠️ {error}
               </p>
             </div>
           )}
 
-          <button 
-            type="submit" 
+          {/* BOTÓN DE ENTRADA */}
+          <button
+            type="submit"
             disabled={loading}
-            className={`w-full bg-[#7F252E] text-white p-4 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 transition transform active:scale-95 ${loading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-[#7F252E] hover:scale-105'}`}
+            className={`w-full p-4 mt-2 font-bold text-white shadow-lg rounded-xl flex items-center justify-center gap-2 transition transform active:scale-95 
+              ${loading 
+                ? 'bg-[#7F252E]/70 cursor-not-allowed' 
+                : 'bg-[#7F252E] hover:bg-[#631d24] hover:scale-[1.02]'
+              }`}
           >
-            {loading ? <Loader2 className="animate-spin" size={24} /> : "Entrar"}
+            {loading ? (
+              <>
+                <Loader2 className="animate-spin" size={22} />
+                <span>Validando acceso...</span>
+              </>
+            ) : (
+              "Entrar"
+            )}
           </button>
         </form>
       </div>
     </div>
-  )
+  );
 }
 
-export default Login
+export default Login;

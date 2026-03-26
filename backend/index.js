@@ -18,9 +18,9 @@ app.use(express.json());
 app.use(helmet());
 
 const loginLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000,
+  windowMs: 10 * 60 * 1000,
   max: 3, 
-  message: { success: false, message: "Demasiados intentos. Inténtalo de nuevo en 15 minutos." }
+  message: { success: false, message: "Demasiados intentos. Inténtalo de nuevo en 10 minutos." }
 });
 
 function verificarToken(req, res, next) {
