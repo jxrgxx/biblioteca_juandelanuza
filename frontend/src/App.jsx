@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from 'react-router-dom';
 import Login from './pages/Login';
 import Home from './pages/Home';
 
@@ -7,13 +12,13 @@ function App() {
   const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem('user_lanuza');
 
-    if(savedUser && savedUser !== 'undefined') {
+    if (savedUser && savedUser !== 'undefined') {
       try {
         return JSON.parse(savedUser);
       } catch (e) {
         return null;
       }
-    } 
+    }
 
     return null;
   });
@@ -37,41 +42,43 @@ function App() {
 
     const resetTimer = () => {
       if (timer) clearTimeout(timer);
-      
-      timer = setTimeout(() => {
-        handleLogout();
-        alert("Sesión cerrada por seguridad tras 10 minutos de inactividad.");
-      }, 10 * 60 * 1000);
+
+      timer = setTimeout(
+        () => {
+          handleLogout();
+          alert('Sesión cerrada por seguridad tras 10 minutos de inactividad.');
+        },
+        10 * 60 * 1000
+      );
     };
 
     const eventos = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
 
-    eventos.forEach(e => window.addEventListener(e, resetTimer));
+    eventos.forEach((e) => window.addEventListener(e, resetTimer));
 
     resetTimer();
 
     return () => {
       if (timer) clearTimeout(timer);
-      eventos.forEach(e => window.removeEventListener(e, resetTimer));
+      eventos.forEach((e) => window.removeEventListener(e, resetTimer));
     };
   }, [user]);
 
   return (
     <Router>
       <Routes>
-        {/* LA RAÍZ AHORA ES EL DASHBOARD */}
-        <Route 
-          path="/" 
-          element={<Home user={user} onLogout={handleLogout} />} 
+        <Route
+          path="/"
+          element={<Home user={user} onLogout={handleLogout} />}
         />
 
-        {/* EL LOGIN ES UNA RUTA APARTE */}
-        <Route 
-          path="/login" 
-          element={!user ? <Login onLoginSuccess={handleLogin} /> : <Navigate to="/" />} 
+        <Route
+          path="/login"
+          element={
+            !user ? <Login onLoginSuccess={handleLogin} /> : <Navigate to="/" />
+          }
         />
 
-        {/* REDIRECCIÓN: Cualquier cosa rara manda a la raíz */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>

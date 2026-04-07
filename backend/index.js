@@ -56,10 +56,10 @@ app.get('/libros', (req, res) => {
     sql = 'SELECT * FROM Libro ORDER BY titulo ASC';
   } else {
     sql = `
-            SELECT * FROM Libro 
-      WHERE titulo LIKE ? 
-      OR autor LIKE ? 
-      OR genero LIKE ?
+      SELECT * FROM Libro 
+      WHERE titulo LIKE ?
+      OR autor LIKE ?
+      or genero LIKE ?
       ORDER BY titulo ASC
     `;
     const valor = `%${busqueda}%`;
