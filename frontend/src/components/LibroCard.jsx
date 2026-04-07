@@ -42,7 +42,7 @@ function LibroCard({ libro, user }) {
           {libro.titulo}
         </h3>
 
-        {/* METADATOS (Autor, Género, Páginas) */}
+        {/* METADATOS */}
         <div className="text-sm space-y-2 font-lanuza flex-1">
           <p className="text-slate-500">
             <span className="font-medium text-black mr-1">Autor:</span>
@@ -61,7 +61,7 @@ function LibroCard({ libro, user }) {
             {libro.editorial}
           </p>
           <p className="text-slate-500">
-            <span className="font-medium text-black mr-1">Edad:</span>
+            <span className="font-medium text-black mr-1">Edad:</span>+
             {libro.clasificacion_edad}
           </p>
           <p className="text-slate-500">
