@@ -22,7 +22,7 @@ app.use(helmet());
 
 const loginLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
-  max: 3,
+  max: 10,
   message: {
     success: false,
     message: 'Demasiados intentos. Inténtalo de nuevo en 10 minutos.',
@@ -47,31 +47,75 @@ function verificarToken(req, res, next) {
 }
 
 app.get('/libros', (req, res) => {
-  const busqueda = req.query.q ? req.query.q.trim() : '';
+  const { q, editorial, edad, genero, paginas, isbn } = req.query;
 
-  let sql;
+  let sql = 'SELECT * FROM Libro WHERE 1=1';
   let params = [];
 
-  if (busqueda === '') {
-    sql = 'SELECT * FROM Libro ORDER BY titulo ASC';
-  } else {
-    sql = `
-      SELECT * FROM Libro 
-      WHERE titulo LIKE ?
-      OR autor LIKE ?
-      or genero LIKE ?
-      ORDER BY titulo ASC
-    `;
-    const valor = `%${busqueda}%`;
-    params = [valor, valor, valor];
+  if (q && q.trim() !== '') {
+    sql += ' AND (titulo LIKE ? OR autor LIKE ?)';
+    params.push(`%${q}%`, `%${q}%`);
   }
 
-  db.query(sql, params, (err, results) => {
-    if (err) {
-      console.error('Error en SQL:', err);
-      return res.status(500).json({ error: 'Error al consultar libros' });
+  if (editorial && editorial !== '') {
+    sql += ' AND editorial = ?';
+    params.push(editorial);
+  }
+
+  if (edad && edad !== '') {
+    sql += ' AND clasificacion_edad <= ?';
+    params.push(edad);
+  }
+
+  if (genero && genero !== '') {
+    sql += ' AND genero = ?';
+    params.push(genero);
+  }
+
+  if (paginas && paginas !== '') {
+    if (paginas === 'muy-corto') {
+      sql += ' AND paginas < 50';
+    } else if (paginas === 'corto') {
+      sql += ' AND paginas BETWEEN 50 AND 100';
+    } else if (paginas === 'estandar') {
+      sql += ' AND paginas BETWEEN 101 AND 300';
+    } else if (paginas === 'largo') {
+      sql += ' AND paginas BETWEEN 301 AND 600';
+    } else if (paginas === 'muy-largo') {
+      sql += ' AND paginas > 600';
     }
+  }
+
+  if (isbn && isbn !== '') {
+    sql += ' AND isbn = ?';
+    params.push(isbn);
+  }
+
+  sql += ' ORDER BY titulo ASC';
+
+  db.query(sql, params, (err, results) => {
+    if (err) return res.status(500).json(err);
     res.json(results);
+  });
+});
+
+app.get('/generos', (req, res) => {
+  const sql =
+    'SELECT DISTINCT genero FROM Libro WHERE genero IS NOT NULL AND genero != "" ORDER BY genero ASC';
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).json(err);
+    const lista = results.map((row) => row.genero);
+    res.json(lista);
+  });
+});
+
+app.get('/editoriales', (req, res) => {
+  const sql =
+    'SELECT DISTINCT editorial FROM Libro WHERE editorial IS NOT NULL AND editorial != "" ORDER BY editorial ASC';
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).json(err);
+    const lista = results.map((row) => row.editorial);
+    res.json(lista);
   });
 });
 
@@ -85,6 +129,7 @@ app.listen(PORT, () => {
 
 app.post('/login', loginLimiter, (req, res) => {
   const { correo, contrasenya } = req.body;
+
   const sql = 'SELECT * FROM Usuario WHERE correo = ? AND contrasenya = ?';
 
   db.query(sql, [correo, contrasenya], (err, results) => {
@@ -93,7 +138,7 @@ app.post('/login', loginLimiter, (req, res) => {
     } else if (results.length > 0) {
       const user = results[0];
 
-      const token = jwt.sign({ id: user.id_usuario }, SECRET_KEY, {
+      const token = jwt.sign({ id: user.id }, SECRET_KEY, {
         expiresIn: '8h',
       });
 
