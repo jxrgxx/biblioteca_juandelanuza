@@ -47,7 +47,7 @@ function verificarToken(req, res, next) {
 }
 
 app.get('/libros', (req, res) => {
-  const { q, editorial, edad, genero, paginas, isbn } = req.query;
+  const { q, editorial, edad, genero, paginas, sort, order } = req.query;
 
   let sql = 'SELECT * FROM Libro WHERE 1=1';
   let params = [];
@@ -86,12 +86,21 @@ app.get('/libros', (req, res) => {
     }
   }
 
-  if (isbn && isbn !== '') {
-    sql += ' AND isbn = ?';
-    params.push(isbn);
-  }
+  const columnasPermitidas = [
+    'titulo',
+    'editorial',
+    'autor',
+    'clasificacion_edad',
+    'genero',
+    'paginas',
+  ];
 
-  sql += ' ORDER BY titulo ASC';
+  const direccionesPermitidas = ['ASC', 'DESC'];
+
+  const campoOrden = columnasPermitidas.includes(sort) ? sort : 'titulo';
+  const direccionOrden = direccionesPermitidas.includes(order) ? order : 'ASC';
+
+  sql += ` ORDER BY ${campoOrden} ${direccionOrden}`;
 
   db.query(sql, params, (err, results) => {
     if (err) return res.status(500).json(err);

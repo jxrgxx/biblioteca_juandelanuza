@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import LibroCard from '../components/LibroCard';
-import { Search, X } from 'lucide-react';
+import { Search, X, ArrowDownAZ, ArrowUpAZ } from 'lucide-react';
 
 function Home({ user, onLogout }) {
   const [libros, setLibros] = useState([]);
@@ -15,6 +15,8 @@ function Home({ user, onLogout }) {
   const [editoriales, setEditoriales] = useState([]);
   const [editorial, setEditorial] = useState('');
   const [rangoPaginas, setRangoPaginas] = useState('');
+  const [sortField, setSortField] = useState('titulo');
+  const [sortOrder, setSortOrder] = useState('ASC');
 
   const cargarLibros = async (textoBusqueda = busqueda) => {
     setLoading(true);
@@ -52,6 +54,8 @@ function Home({ user, onLogout }) {
             edad: edad,
             editorial: editorial,
             paginas: rangoPaginas,
+            sort: sortField,
+            order: sortOrder,
           },
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
@@ -71,7 +75,7 @@ function Home({ user, onLogout }) {
 
     const timeoutId = setTimeout(cargarLibros, 300);
     return () => clearTimeout(timeoutId);
-  }, [busqueda, genero, edad, editorial, rangoPaginas]);
+  }, [busqueda, genero, edad, editorial, rangoPaginas, sortField, sortOrder]);
 
   useEffect(() => {
     const cargarFiltros = async () => {
@@ -161,48 +165,45 @@ function Home({ user, onLogout }) {
           )}
         </div>
 
-        {/* 2. BARRA DE HERRAMIENTAS (Buscador y Filtros) */}
+        {/* 2. BARRA DE HERRAMIENTAS (Buscador, Filtros y Ordenación) */}
         <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-200 mb-10 flex flex-col xl:flex-row gap-6 items-center">
-          {/* Buscador */}
-          <div className="relative w-full xl:max-w-md">
+          {/* BUSCADOR */}
+          <div className="relative w-full xl:max-w-xs">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <Search className="h-5 w-5 text-slate-400" />
             </div>
             <input
               type="text"
-              placeholder="Escribe título o autor..."
-              className="w-full pl-12 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-1 focus:ring-[#7F252E] focus:border-[#7F252E] transition-all font-lanuza text-slate-700"
+              placeholder="Buscar título o autor..."
+              className="w-full pl-11 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-1 focus:ring-[#7F252E] focus:border-[#7F252E] transition-all font-lanuza text-sm text-slate-700"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
             />
             {busqueda && (
               <button
                 onClick={handleLimpiarBusqueda}
-                className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-red-500"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-red-500"
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             )}
           </div>
 
-          {/* Separador visual en escritorio */}
           <div className="hidden xl:block w-px h-8 bg-slate-200"></div>
 
-          {/* Grupo de Selectores */}
+          {/* GRUPO DE FILTROS Y ORDENACIÓN */}
           <div className="flex flex-wrap items-center gap-4 w-full">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-black uppercase tracking-widest font-lanuza">
-                Filtros:
-              </span>
-            </div>
+            <span className="text-[10px] font-bold text-black uppercase tracking-widest font-lanuza">
+              Filtrar:
+            </span>
 
-            {/* SELECTOR DE GÉNERO */}
-            <div className="flex items-center gap-2 flex-1 sm:flex-none">
+            {/* GÉNERO */}
+            <div className="flex items-center gap-2">
               <label className="text-xs font-medium text-black uppercase tracking-tight font-lanuza">
                 Género
               </label>
               <select
-                className="w-full sm:w-auto px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-1 focus:ring-[#7F252E] text-sm text-slate-600 font-lanuza cursor-pointer hover:bg-slate-100 transition-colors"
+                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-1 focus:ring-[#7F252E] text-xs text-slate-600 font-lanuza cursor-pointer"
                 value={genero}
                 onChange={(e) => setGenero(e.target.value)}
               >
@@ -215,15 +216,13 @@ function Home({ user, onLogout }) {
               </select>
             </div>
 
-            <div className="hidden xl:block w-px h-8 bg-slate-200"></div>
-
-            {/* SELECTOR DE EDITORIAL ADAPTATIVO */}
-            <div className="flex items-center gap-2 flex-1 sm:flex-none">
-              <label className="text-xs font-medium text-black uppercase tracking-tight font-lanuza ml-2">
+            {/* EDITORIAL */}
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-medium text-black uppercase tracking-tight font-lanuza">
                 Editorial
               </label>
               <select
-                className="w-full sm:w-auto px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-1 focus:ring-[#7F252E] text-sm text-slate-600 font-lanuza cursor-pointer hover:bg-slate-100 transition-colors"
+                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-1 focus:ring-[#7F252E] text-xs text-slate-600 font-lanuza cursor-pointer"
                 value={editorial}
                 onChange={(e) => setEditorial(e.target.value)}
               >
@@ -236,58 +235,69 @@ function Home({ user, onLogout }) {
               </select>
             </div>
 
-            <div className="hidden xl:block w-px h-8 bg-slate-200"></div>
-
-            {/* SELECTOR DE EDAD */}
-            <div className="flex items-center gap-2 flex-1 sm:flex-none">
-              <label className="text-xs font-medium text-black uppercase tracking-tight font-lanuza ml-2">
+            {/* EDAD */}
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-medium text-black uppercase tracking-tight font-lanuza">
                 Edad
               </label>
               <select
-                className="w-full sm:w-auto px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-1 focus:ring-[#7F252E] text-sm text-slate-600 font-lanuza cursor-pointer hover:bg-slate-100 transition-colors"
+                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-1 focus:ring-[#7F252E] text-xs text-slate-600 font-lanuza cursor-pointer"
                 value={edad}
                 onChange={(e) => setEdad(e.target.value)}
               >
                 <option value="">Todas</option>
-                <option value="6">Hasta 6 años</option>
-                <option value="10">Hasta 10 años</option>
-                <option value="14">Hasta 14 años</option>
-                <option value="18">Hasta 18 años</option>
+                <option value="6">Hasta 6</option>
+                <option value="10">Hasta 10</option>
+                <option value="14">Hasta 14</option>
+                <option value="18">Hasta 18</option>
               </select>
             </div>
 
-            <div className="hidden xl:block w-px h-8 bg-slate-200"></div>
+            <div className="hidden xl:block w-px h-8 bg-slate-200 mx-2"></div>
 
-            {/* SELECTOR DE PÁGINAS */}
-            <div className="flex items-center gap-2 flex-1 sm:flex-none">
-              <label className="text-xs font-medium text-black uppercase tracking-tight font-lanuza ml-2">
-                Páginas
-              </label>
+            {/* ORDENACIÓN */}
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-medium text-black uppercase tracking-widest font-lanuza mr-1">
+                Orden:
+              </span>
               <select
-                className="w-full sm:w-auto px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-1 focus:ring-[#7F252E] text-sm text-slate-600 font-lanuza cursor-pointer hover:bg-slate-100 transition-colors shadow-sm"
-                value={rangoPaginas}
-                onChange={(e) => setRangoPaginas(e.target.value)}
+                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-1 focus:ring-[#7F252E] text-xs text-black font-lanuza cursor-pointer font-medium"
+                value={sortField}
+                onChange={(e) => setSortField(e.target.value)}
               >
-                <option value="">Cualquiera</option>
-                <option value="muy-corto">Muy corto (&lt; 50p)</option>
-                <option value="corto">Corto (50-100p)</option>
-                <option value="estandar">Estándar (100-300p)</option>
-                <option value="largo">Largo (300-600p)</option>
-                <option value="muy-largo">Muy largo (&gt; 600p)</option>
+                <option value="titulo">Título</option>
+                <option value="autor">Autor</option>
+                <option value="editorial">Editorial</option>
+                <option value="clasificacion_edad">Edad</option>
+                <option value="paginas">Páginas</option>
               </select>
+
+              <button
+                onClick={() =>
+                  setSortOrder(sortOrder === 'ASC' ? 'DESC' : 'ASC')
+                }
+                className="p-2 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 transition-colors text-[#7F252E] shadow-sm"
+                title={sortOrder === 'ASC' ? 'Ascendente' : 'Descendente'}
+              >
+                {sortOrder === 'ASC' ? (
+                  <ArrowDownAZ size={18} />
+                ) : (
+                  <ArrowUpAZ size={18} />
+                )}
+              </button>
             </div>
 
-            {/* BOTÓN LIMPIAR FILTROS */}
+            {/* BOTÓN LIMPIAR */}
             {(busqueda || genero || edad || editorial) && (
               <button
                 onClick={handleLimpiarBusqueda}
-                className="ml-auto text-xs font-bold text-[#7F252E] uppercase tracking-wider hover:text-[#631d24] flex items-center gap-1 group font-lanuza"
+                className="ml-auto text-[10px] font-bold text-[#7F252E] uppercase tracking-wider hover:text-[#631d24] flex items-center gap-1 group font-lanuza border border-[#7F252E]/20 px-3 py-2 rounded-xl bg-red-50/50"
               >
                 <X
-                  size={14}
+                  size={12}
                   className="group-hover:rotate-90 transition-transform"
                 />
-                Limpiar Filtros
+                Limpiar
               </button>
             )}
           </div>
@@ -306,7 +316,7 @@ function Home({ user, onLogout }) {
             {libros.length === 0 ? (
               <div className="text-center py-20 bg-white rounded-[3rem] border border-dashed border-slate-300">
                 <p className="text-slate-400 text-xl font-lanuza">
-                  No se han encontrado resultados para "
+                  No hay resultados para "
                   <span className="text-slate-600 font-bold">{busqueda}</span>"
                 </p>
                 <button

@@ -20,7 +20,7 @@ function LibroCard({ libro, user }) {
               ? `/portadas/${libro.portada_img}`
               : '/portadas/default.png'
           }
-          alt={libro.titulo_libro}
+          alt={libro.titulo}
           onError={handleImageError}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
