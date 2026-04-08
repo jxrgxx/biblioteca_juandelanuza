@@ -69,8 +69,8 @@ function Footer() {
             © {new Date().getFullYear()} Colegio Juan de Lanuza. Todos los
             derechos reservados.
           </p>
-          <p className="text-xs font-bold text-slate-500">
-            Desarrollado por <span className="text-[#7F252E]">Jorge</span>
+          <p className="text-xs font-medium text-slate-500">
+            Desarrollado por <span className="text-[#7F252E]">Jorge Lei</span>
           </p>
         </div>
       </div>
