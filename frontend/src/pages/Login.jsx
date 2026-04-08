@@ -18,10 +18,12 @@ function Login({ onLoginSuccess }) {
     setError('');
 
     try {
-      const passwordHashed = CryptoJS.SHA256(password.trim()).toString(CryptoJS.enc.Hex);
+      const passwordHashed = CryptoJS.SHA256(password.trim()).toString(
+        CryptoJS.enc.Hex
+      );
 
       const res = await axios.post('http://localhost:3001/login', {
-        correo: correo,
+        correo: correo.trim(),
         contrasenya: passwordHashed,
       });
 
@@ -30,7 +32,8 @@ function Login({ onLoginSuccess }) {
         navigate('/');
       }
     } catch (err) {
-      const mensajeError = err.response?.data?.message || 'Credenciales incorrectas';
+      const mensajeError =
+        err.response?.data?.message || 'Credenciales incorrectas';
       setError(mensajeError);
     } finally {
       setLoading(false);
@@ -47,7 +50,6 @@ function Login({ onLoginSuccess }) {
 
       {/* CONTENEDOR LOGIN */}
       <div className="relative z-10 w-full max-w-md p-8 bg-white border-t-8 border-[#7F252E] shadow-2xl rounded-2xl">
-        
         {/* LOGO Y TÍTULO */}
         <div className="mb-8 text-center">
           <img
@@ -61,7 +63,6 @@ function Login({ onLoginSuccess }) {
         </div>
 
         <form onSubmit={handleLogin} className="space-y-5 text-slate-800">
-          
           {/* CAMPO CORREO */}
           <div>
             <label className="block text-sm font-medium text-[#7F252E] font-lanuza mb-1">
@@ -84,7 +85,7 @@ function Login({ onLoginSuccess }) {
             </label>
             <div className="relative">
               <input
-                type={showPassword ? "text" : "password"}
+                type={showPassword ? 'text' : 'password'}
                 className="w-full p-3 pr-12 transition border outline-none border-slate-200 rounded-xl bg-slate-50 focus:ring-1 focus:ring-[#7F252E] focus:border-[#7F252E]"
                 placeholder="••••••••••••••"
                 value={password}
@@ -115,9 +116,10 @@ function Login({ onLoginSuccess }) {
             type="submit"
             disabled={loading}
             className={`w-full p-4 mt-2 font-bold text-white shadow-lg rounded-xl flex items-center justify-center gap-2 transition transform active:scale-95 
-              ${loading 
-                ? 'bg-[#7F252E]/70 cursor-not-allowed' 
-                : 'bg-[#7F252E] hover:bg-[#631d24] hover:scale-[1.02]'
+              ${
+                loading
+                  ? 'bg-[#7F252E]/70 cursor-not-allowed'
+                  : 'bg-[#7F252E] hover:bg-[#631d24] hover:scale-[1.02]'
               }`}
           >
             {loading ? (
@@ -126,7 +128,7 @@ function Login({ onLoginSuccess }) {
                 <span>Validando acceso...</span>
               </>
             ) : (
-              "Entrar"
+              'Entrar'
             )}
           </button>
         </form>

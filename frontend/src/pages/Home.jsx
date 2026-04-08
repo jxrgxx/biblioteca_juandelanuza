@@ -17,18 +17,38 @@ function Home({ user, onLogout }) {
   const [rangoPaginas, setRangoPaginas] = useState('');
   const [sortField, setSortField] = useState('titulo');
   const [sortOrder, setSortOrder] = useState('ASC');
+  const [pagina, setPagina] = useState(1);
+  const [hayMasLibros, setHayMasLibros] = useState(true);
 
-  const cargarLibros = async (textoBusqueda = busqueda) => {
-    setLoading(true);
+  const cargarLibros = async (numPagina = 1) => {
+    if (numPagina === 1) {
+      setLoading(true);
+      setPagina(1);
+    }
+
     const token = localStorage.getItem('token_lanuza');
     try {
-      const res = await axios.get(
-        `http://localhost:3001/libros?q=${textoBusqueda}`,
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        }
-      );
-      setLibros(res.data);
+      const res = await axios.get(`http://localhost:3001/libros`, {
+        params: {
+          q: busqueda,
+          genero: genero,
+          edad: edad,
+          editorial: editorial,
+          paginas: rangoPaginas,
+          sort: sortField,
+          order: sortOrder,
+          page: numPagina,
+        },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
+      if (numPagina === 1) {
+        setLibros(res.data);
+      } else {
+        setLibros((prev) => [...prev, ...res.data]);
+      }
+
+      setHayMasLibros(res.data.length === 42);
     } catch (error) {
       console.error('Error cargando libros', error);
       if (
@@ -43,37 +63,9 @@ function Home({ user, onLogout }) {
   };
 
   useEffect(() => {
-    const cargarLibros = async () => {
-      setLoading(true);
-      const token = localStorage.getItem('token_lanuza');
-      try {
-        const res = await axios.get(`http://localhost:3001/libros`, {
-          params: {
-            q: busqueda,
-            genero: genero,
-            edad: edad,
-            editorial: editorial,
-            paginas: rangoPaginas,
-            sort: sortField,
-            order: sortOrder,
-          },
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-        setLibros(res.data);
-      } catch (error) {
-        console.error(error);
-        if (
-          user &&
-          (error.response?.status === 401 || error.response?.status === 403)
-        ) {
-          onLogout();
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const timeoutId = setTimeout(cargarLibros, 300);
+    const timeoutId = setTimeout(() => {
+      cargarLibros(1);
+    }, 300);
     return () => clearTimeout(timeoutId);
   }, [busqueda, genero, edad, editorial, rangoPaginas, sortField, sortOrder]);
 
@@ -96,6 +88,13 @@ function Home({ user, onLogout }) {
     setGenero('');
     setEdad('');
     setEditorial('');
+    setRangoPaginas('');
+  };
+
+  const handleCargarMas = () => {
+    const siguientePagina = pagina + 1;
+    setPagina(siguientePagina);
+    cargarLibros(siguientePagina);
   };
 
   return (
@@ -119,10 +118,10 @@ function Home({ user, onLogout }) {
               <div className="flex items-center gap-5">
                 <div className="text-right hidden sm:block border-r pr-5 border-slate-200">
                   <p className="text-sm font-bold text-slate-900">
-                    {user.correo_usuario}
+                    {user.correo}
                   </p>
                   <p className="text-xs font-bold text-[#7F252E] uppercase">
-                    {user.rol_usuario}
+                    {user.rol}
                   </p>
                 </div>
                 <button
@@ -135,7 +134,7 @@ function Home({ user, onLogout }) {
             ) : (
               <button
                 onClick={() => navigate('/login')}
-                className="bg-[#7F252E] text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-[#631d24] transition-all shadow-lg shadow-red-900/10 active:scale-95 font-lanuza"
+                className="bg-[#7F252E] text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-[#631d24] transition-all shadow-lg shadow-red-900/10 active:scale-95 font-lanuza"
               >
                 Acceso Personal
               </button>
@@ -146,7 +145,7 @@ function Home({ user, onLogout }) {
 
       {/* Contenido Principal */}
       <main className="w-full px-4 md:px-10 py-8">
-        {/* 1. CABECERA: Título y Botón de Acción */}
+        {/* 1. CABECERA */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
           <div>
             <h2 className="text-4xl font-medium font-lanuza text-[#7F252E] tracking-tight">
@@ -193,11 +192,10 @@ function Home({ user, onLogout }) {
 
           {/* GRUPO DE FILTROS Y ORDENACIÓN */}
           <div className="flex flex-wrap items-center gap-4 w-full">
-            <span className="text-[10px] font-bold text-black uppercase tracking-widest font-lanuza">
-              Filtrar:
+            <span className="text-[10px] font-medium text-black uppercase tracking-widest font-lanuza">
+              Filtros:
             </span>
 
-            {/* GÉNERO */}
             <div className="flex items-center gap-2">
               <label className="text-xs font-medium text-black uppercase tracking-tight font-lanuza">
                 Género
@@ -216,7 +214,6 @@ function Home({ user, onLogout }) {
               </select>
             </div>
 
-            {/* EDITORIAL */}
             <div className="flex items-center gap-2">
               <label className="text-xs font-medium text-black uppercase tracking-tight font-lanuza">
                 Editorial
@@ -235,7 +232,6 @@ function Home({ user, onLogout }) {
               </select>
             </div>
 
-            {/* EDAD */}
             <div className="flex items-center gap-2">
               <label className="text-xs font-medium text-black uppercase tracking-tight font-lanuza">
                 Edad
@@ -255,7 +251,6 @@ function Home({ user, onLogout }) {
 
             <div className="hidden xl:block w-px h-8 bg-slate-200 mx-2"></div>
 
-            {/* ORDENACIÓN */}
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-medium text-black uppercase tracking-widest font-lanuza mr-1">
                 Orden:
@@ -271,13 +266,11 @@ function Home({ user, onLogout }) {
                 <option value="clasificacion_edad">Edad</option>
                 <option value="paginas">Páginas</option>
               </select>
-
               <button
                 onClick={() =>
                   setSortOrder(sortOrder === 'ASC' ? 'DESC' : 'ASC')
                 }
                 className="p-2 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 transition-colors text-[#7F252E] shadow-sm"
-                title={sortOrder === 'ASC' ? 'Ascendente' : 'Descendente'}
               >
                 {sortOrder === 'ASC' ? (
                   <ArrowDownAZ size={18} />
@@ -287,7 +280,6 @@ function Home({ user, onLogout }) {
               </button>
             </div>
 
-            {/* BOTÓN LIMPIAR */}
             {(busqueda || genero || edad || editorial) && (
               <button
                 onClick={handleLimpiarBusqueda}
@@ -303,8 +295,8 @@ function Home({ user, onLogout }) {
           </div>
         </div>
 
-        {/* 3. LISTADO DE LIBROS */}
-        {loading ? (
+        {/* 3. LISTADO DE LIBROS CON CARGAR MÁS */}
+        {loading && pagina === 1 ? (
           <div className="flex flex-col justify-center items-center h-80 gap-4">
             <LoaderComponent />
             <p className="text-slate-400 font-bold animate-pulse font-lanuza">
@@ -327,11 +319,44 @@ function Home({ user, onLogout }) {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-6">
-                {libros.map((libro) => (
-                  <LibroCard key={libro.id_libro} libro={libro} user={user} />
-                ))}
-              </div>
+              <>
+                {/* GRID DE LIBROS */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-6">
+                  {libros.map((libro) => (
+                    <LibroCard key={libro.id_libro} libro={libro} user={user} />
+                  ))}
+                </div>
+
+                {/* BOTÓN CARGAR MÁS */}
+                {hayMasLibros && (
+                  <div className="flex justify-center mt-16 mb-20">
+                    <button
+                      onClick={handleCargarMas}
+                      disabled={loading}
+                      className={`bg-white text-[#7F252E] border-2 border-[#7F252E] px-10 py-3 rounded-2xl font-bold transition-all transform active:scale-95 shadow-md font-lanuza flex items-center gap-3
+                      ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#7F252E] hover:text-white'}`}
+                    >
+                      {loading ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                          <span>Cargando...</span>
+                        </>
+                      ) : (
+                        'Cargar más libros'
+                      )}
+                    </button>
+                  </div>
+                )}
+
+                {/* MENSAJE FINAL */}
+                {!hayMasLibros && libros.length >= 42 && (
+                  <div className="text-center mt-12 mb-20">
+                    <p className="text-slate-400 font-lanuza italic">
+                      Has llegado al final del catálogo
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </>
         )}

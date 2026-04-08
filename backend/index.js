@@ -47,7 +47,11 @@ function verificarToken(req, res, next) {
 }
 
 app.get('/libros', (req, res) => {
-  const { q, editorial, edad, genero, paginas, sort, order } = req.query;
+  const { q, editorial, edad, genero, paginas, sort, order, page } = req.query;
+
+  const limite = 42;
+  const paginaActual = parseInt(page) || 1;
+  const saltar = (paginaActual - 1) * limite; //Offest
 
   let sql = 'SELECT * FROM Libro WHERE 1=1';
   let params = [];
@@ -101,6 +105,9 @@ app.get('/libros', (req, res) => {
   const direccionOrden = direccionesPermitidas.includes(order) ? order : 'ASC';
 
   sql += ` ORDER BY ${campoOrden} ${direccionOrden}`;
+
+  sql += ` LIMIT ? OFFSET ?`;
+  params.push(limite, saltar);
 
   db.query(sql, params, (err, results) => {
     if (err) return res.status(500).json(err);
