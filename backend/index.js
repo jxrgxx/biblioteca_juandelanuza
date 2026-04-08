@@ -34,20 +34,26 @@ function verificarToken(req, res, next) {
     req.headers['authorization'] || req.headers['Authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
-  if (!token) return res.status(401).json({ error: 'Acceso denegado' });
+  console.log('>>> Escudo comprobando token:', token);
+
+  if (!token) {
+    console.log('>>> Escudo: No hay token');
+    return res.status(401).json({ error: 'Acceso denegado' });
+  }
 
   jwt.verify(token, SECRET_KEY, (err, decoded) => {
     if (err) {
-      console.error('Error al verificar JWT:', err.message);
+      console.log('>>> Escudo: Token inválido', err.message);
       return res.status(403).json({ error: 'Token no válido' });
     }
+    console.log('>>> Escudo: Token OK. Pasando a la ruta...');
     req.user = decoded;
     next();
   });
 }
 
 app.get('/libros', (req, res) => {
-  const { q, editorial, edad, genero, paginas, sort, order, page } = req.query;
+  const { q, editorial, anyo, genero, paginas, sort, order, page } = req.query;
 
   const limite = 42;
   const paginaActual = parseInt(page) || 1;
@@ -66,9 +72,17 @@ app.get('/libros', (req, res) => {
     params.push(editorial);
   }
 
-  if (edad && edad !== '') {
-    sql += ' AND clasificacion_edad <= ?';
-    params.push(edad);
+  if (anyo && anyo !== '') {
+    if (anyo === '2020') {
+      sql += ' AND anyo_publicacion >= 2020';
+    } else if (anyo === '2010') {
+      sql += ' AND anyo_publicacion BETWEEN 2010 AND 2019';
+    } else if (anyo === 'antiguo') {
+      sql += ' AND anyo_publicacion < 1990';
+    } else {
+      sql += ' AND anyo_publicacion BETWEEN ? AND ?';
+      params.push(parseInt(anyo), parseInt(anyo) + 9);
+    }
   }
 
   if (genero && genero !== '') {
@@ -94,13 +108,12 @@ app.get('/libros', (req, res) => {
     'titulo',
     'editorial',
     'autor',
-    'clasificacion_edad',
+    'anyo_publicacion',
     'genero',
     'paginas',
   ];
 
   const direccionesPermitidas = ['ASC', 'DESC'];
-
   const campoOrden = columnasPermitidas.includes(sort) ? sort : 'titulo';
   const direccionOrden = direccionesPermitidas.includes(order) ? order : 'ASC';
 
@@ -135,8 +148,21 @@ app.get('/editoriales', (req, res) => {
   });
 });
 
-app.post('/libros', verificarToken, (req, res) => {});
-app.post('/prestamos', verificarToken, (req, res) => {});
+app.get('/usuarios/buscar', verificarToken, (req, res) => {
+  const correo = req.query.email;
+
+  const sql =
+    'SELECT id_usuario, nombre, correo FROM Usuario WHERE correo = ? AND rol = "Alumno"';
+
+  db.query(sql, [correo], (err, results) => {
+    if (err) return res.status(500).json(err);
+    if (results.length > 0) {
+      res.json({ success: true, usuario: results[0] });
+    } else {
+      res.json({ success: false, message: 'Alumno no encontrado' });
+    }
+  });
+});
 
 const PORT = 3001;
 app.listen(PORT, () => {
@@ -154,7 +180,7 @@ app.post('/login', loginLimiter, (req, res) => {
     } else if (results.length > 0) {
       const user = results[0];
 
-      const token = jwt.sign({ id: user.id }, SECRET_KEY, {
+      const token = jwt.sign({ id: user.id_usuario }, SECRET_KEY, {
         expiresIn: '8h',
       });
 
@@ -166,4 +192,91 @@ app.post('/login', loginLimiter, (req, res) => {
         .json({ success: false, message: 'Credenciales incorrectas' });
     }
   });
+});
+
+app.post('/prestamos', verificarToken, (req, res) => {
+  const { id_libro, correo_alumno } = req.body;
+
+  db.query(
+    'SELECT id_usuario, correo FROM Usuario WHERE correo = ?',
+    [correo_alumno],
+    (err, users) => {
+      if (err) {
+        console.log('Error SQL Usuario:', err);
+        return res
+          .status(500)
+          .json({ success: false, message: 'Error buscando alumno' });
+      }
+
+      if (users.length === 0) {
+        console.log('Error: Alumno no encontrado');
+        return res
+          .status(404)
+          .json({ success: false, message: 'El alumno no existe' });
+      }
+
+      const id_usuario_db = users[0].id_usuario;
+
+      db.query(
+        'SELECT titulo, estado FROM Libro WHERE id_libro = ?',
+        [id_libro],
+        (err, libros) => {
+          if (err) {
+            console.log('Error SQL Libro:', err);
+            return res
+              .status(500)
+              .json({ success: false, message: 'Error buscando libro' });
+          }
+
+          if (libros.length === 0) {
+            console.log('Error: Libro no encontrado');
+            return res
+              .status(404)
+              .json({ success: false, message: 'Libro no encontrado' });
+          }
+
+          const ahora = new Date();
+          const limite = new Date();
+          limite.setDate(ahora.getDate() + 15);
+
+          const sqlInsert =
+            'INSERT INTO prestamo (id_libro, id_usuario, fecha_inicio, fecha_limite, devuelto) VALUES (?, ?, ?, ?, 0)';
+
+          db.query(
+            sqlInsert,
+            [id_libro, id_usuario_db, ahora, limite],
+            (err) => {
+              if (err) {
+                console.log('Error SQL Insert:', err);
+                return res.status(500).json({
+                  success: false,
+                  message: 'Error al registrar préstamo',
+                });
+              }
+
+              db.query(
+                'UPDATE Libro SET estado = "Prestado" WHERE id_libro = ?',
+                [id_libro],
+                (err) => {
+                  if (err) {
+                    console.log('Error SQL Update Libro:', err);
+                    return res.status(500).json({
+                      success: false,
+                      message: 'Error al actualizar libro',
+                    });
+                  }
+
+                  console.log('4. ¡TODO OK! Préstamo registrado.');
+                  return res.json({
+                    success: true,
+                    message: `¡Libro '${libros[0].titulo}' prestado correctamente!`,
+                  });
+                }
+              );
+            }
+          );
+        }
+      );
+    }
+  );
 });

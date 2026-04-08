@@ -11,7 +11,7 @@ function Home({ user, onLogout }) {
   const [busqueda, setBusqueda] = useState('');
   const [generos, setGeneros] = useState([]);
   const [genero, setGenero] = useState('');
-  const [edad, setEdad] = useState('');
+  const [anyo, setAnyo] = useState('');
   const [editoriales, setEditoriales] = useState([]);
   const [editorial, setEditorial] = useState('');
   const [rangoPaginas, setRangoPaginas] = useState('');
@@ -32,7 +32,7 @@ function Home({ user, onLogout }) {
         params: {
           q: busqueda,
           genero: genero,
-          edad: edad,
+          anyo: anyo,
           editorial: editorial,
           paginas: rangoPaginas,
           sort: sortField,
@@ -63,11 +63,15 @@ function Home({ user, onLogout }) {
   };
 
   useEffect(() => {
+    const timerCarga = async (numPag = 1) => {
+      await cargarLibros(numPag);
+    };
+
     const timeoutId = setTimeout(() => {
-      cargarLibros(1);
+      timerCarga(1);
     }, 300);
     return () => clearTimeout(timeoutId);
-  }, [busqueda, genero, edad, editorial, rangoPaginas, sortField, sortOrder]);
+  }, [busqueda, genero, anyo, editorial, rangoPaginas, sortField, sortOrder]);
 
   useEffect(() => {
     const cargarFiltros = async () => {
@@ -86,7 +90,7 @@ function Home({ user, onLogout }) {
   const handleLimpiarBusqueda = () => {
     setBusqueda('');
     setGenero('');
-    setEdad('');
+    setAnyo('');
     setEditorial('');
     setRangoPaginas('');
   };
@@ -116,6 +120,14 @@ function Home({ user, onLogout }) {
           <div className="flex items-center gap-6">
             {user ? (
               <div className="flex items-center gap-5">
+                {/* NUEVO BOTÓN PARA IR AL MOSTRADOR */}
+                <button
+                  onClick={() => navigate('/gestion')}
+                  className="bg-[#7F252E] text-white px-5 py-2 rounded-xl text-sm font-bold hover:bg-[#631d24] transition-all border border-[#7F252E] flex items-center gap-2 shadow-md shadow-red-900/10"
+                >
+                  <span className="text-lg">⚡</span>
+                  Gestión
+                </button>
                 <div className="text-right hidden sm:block border-r pr-5 border-slate-200">
                   <p className="text-sm font-bold text-slate-900">
                     {user.correo}
@@ -232,20 +244,22 @@ function Home({ user, onLogout }) {
               </select>
             </div>
 
+            {/* SELECTOR DE AÑO */}
             <div className="flex items-center gap-2">
               <label className="text-xs font-medium text-black uppercase tracking-tight font-lanuza">
-                Edad
+                Año
               </label>
               <select
                 className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-1 focus:ring-[#7F252E] text-xs text-slate-600 font-lanuza cursor-pointer"
-                value={edad}
-                onChange={(e) => setEdad(e.target.value)}
+                value={anyo}
+                onChange={(e) => setAnyo(e.target.value)}
               >
-                <option value="">Todas</option>
-                <option value="6">Hasta 6</option>
-                <option value="10">Hasta 10</option>
-                <option value="14">Hasta 14</option>
-                <option value="18">Hasta 18</option>
+                <option value="">Todos</option>
+                <option value="2020">Desde 2020</option>
+                <option value="2010">2010 - 2019</option>
+                <option value="2000">2000 - 2009</option>
+                <option value="1990">1990 - 1999</option>
+                <option value="antiguo">Anteriores a 1990</option>
               </select>
             </div>
 
@@ -263,7 +277,7 @@ function Home({ user, onLogout }) {
                 <option value="titulo">Título</option>
                 <option value="autor">Autor</option>
                 <option value="editorial">Editorial</option>
-                <option value="clasificacion_edad">Edad</option>
+                <option value="anyo_publicacion">Año publicación</option>
                 <option value="paginas">Páginas</option>
               </select>
               <button
@@ -280,7 +294,7 @@ function Home({ user, onLogout }) {
               </button>
             </div>
 
-            {(busqueda || genero || edad || editorial) && (
+            {(busqueda || genero || anyo || editorial) && (
               <button
                 onClick={handleLimpiarBusqueda}
                 className="ml-auto text-[10px] font-bold text-[#7F252E] uppercase tracking-wider hover:text-[#631d24] flex items-center gap-1 group font-lanuza border border-[#7F252E]/20 px-3 py-2 rounded-xl bg-red-50/50"

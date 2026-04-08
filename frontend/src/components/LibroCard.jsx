@@ -61,8 +61,10 @@ function LibroCard({ libro, user }) {
             {libro.editorial}
           </p>
           <p className="text-slate-500">
-            <span className="font-medium text-black mr-1">Edad:</span>+
-            {libro.clasificacion_edad}
+            <span className="font-medium text-black mr-1">
+              Año Publicación:
+            </span>
+            {libro.anyo_publicacion}
           </p>
           <p className="text-slate-500">
             <span className="font-medium text-black mr-1">Paginas:</span>

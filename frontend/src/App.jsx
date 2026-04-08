@@ -8,6 +8,7 @@ import {
 import Login from './pages/Login';
 import Home from './pages/Home';
 import Footer from './components/Footer';
+import Gestion from './pages/Gestion';
 
 function App() {
   const [user, setUser] = useState(() => {
@@ -82,6 +83,17 @@ function App() {
                   <Login onLoginSuccess={handleLogin} />
                 ) : (
                   <Navigate to="/" />
+                )
+              }
+            />
+
+            <Route
+              path="/gestion"
+              element={
+                user ? (
+                  <Gestion user={user} onLogout={handleLogout} />
+                ) : (
+                  <Navigate to="/login" />
                 )
               }
             />
