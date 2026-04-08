@@ -34,19 +34,14 @@ function verificarToken(req, res, next) {
     req.headers['authorization'] || req.headers['Authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
-  console.log('>>> Escudo comprobando token:', token);
-
   if (!token) {
-    console.log('>>> Escudo: No hay token');
     return res.status(401).json({ error: 'Acceso denegado' });
   }
 
   jwt.verify(token, SECRET_KEY, (err, decoded) => {
     if (err) {
-      console.log('>>> Escudo: Token inválido', err.message);
       return res.status(403).json({ error: 'Token no válido' });
     }
-    console.log('>>> Escudo: Token OK. Pasando a la ruta...');
     req.user = decoded;
     next();
   });
@@ -201,76 +196,84 @@ app.post('/prestamos', verificarToken, (req, res) => {
     'SELECT id_usuario, correo FROM Usuario WHERE correo = ?',
     [correo_alumno],
     (err, users) => {
-      if (err) {
-        console.log('Error SQL Usuario:', err);
+      if (err)
         return res
           .status(500)
-          .json({ success: false, message: 'Error buscando alumno' });
-      }
-
-      if (users.length === 0) {
-        console.log('Error: Alumno no encontrado');
+          .json({ success: false, message: 'Error en el servidor' });
+      if (users.length === 0)
         return res
           .status(404)
           .json({ success: false, message: 'El alumno no existe' });
-      }
 
-      const id_usuario_db = users[0].id_usuario;
+      const id_usuario = users[0].id_usuario;
 
       db.query(
         'SELECT titulo, estado FROM Libro WHERE id_libro = ?',
         [id_libro],
         (err, libros) => {
-          if (err) {
-            console.log('Error SQL Libro:', err);
+          if (err)
             return res
               .status(500)
-              .json({ success: false, message: 'Error buscando libro' });
-          }
-
-          if (libros.length === 0) {
-            console.log('Error: Libro no encontrado');
+              .json({ success: false, message: 'Error al buscar libro' });
+          if (libros.length === 0)
             return res
               .status(404)
               .json({ success: false, message: 'Libro no encontrado' });
+
+          if (libros[0].estado !== 'Disponible') {
+            return res.status(400).json({
+              success: false,
+              message: `El libro '${libros[0].titulo}' ya figura como ${libros[0].estado}.`,
+            });
           }
 
-          const ahora = new Date();
-          const limite = new Date();
-          limite.setDate(ahora.getDate() + 15);
-
-          const sqlInsert =
-            'INSERT INTO prestamo (id_libro, id_usuario, fecha_inicio, fecha_limite, devuelto) VALUES (?, ?, ?, ?, 0)';
-
           db.query(
-            sqlInsert,
-            [id_libro, id_usuario_db, ahora, limite],
-            (err) => {
-              if (err) {
-                console.log('Error SQL Insert:', err);
-                return res.status(500).json({
+            'SELECT * FROM prestamo WHERE id_libro = ? AND devuelto = 0',
+            [id_libro],
+            (err, prestamosActivos) => {
+              if (prestamosActivos.length > 0) {
+                return res.status(400).json({
                   success: false,
-                  message: 'Error al registrar préstamo',
+                  message:
+                    'Error crítico: Este libro tiene un préstamo pendiente de devolución en el historial.',
                 });
               }
 
+              const ahora = new Date();
+              const limite = new Date();
+              limite.setDate(ahora.getDate() + 15);
+
+              const sqlInsert = `
+          INSERT INTO prestamo (id_libro, id_usuario, fecha_inicio, fecha_limite, devuelto) 
+          VALUES (?, ?, ?, ?, 0)
+        `;
+
               db.query(
-                'UPDATE Libro SET estado = "Prestado" WHERE id_libro = ?',
-                [id_libro],
+                sqlInsert,
+                [id_libro, id_usuario, ahora, limite],
                 (err) => {
-                  if (err) {
-                    console.log('Error SQL Update Libro:', err);
+                  if (err)
                     return res.status(500).json({
                       success: false,
-                      message: 'Error al actualizar libro',
+                      message: 'Error al crear registro',
                     });
-                  }
 
-                  console.log('4. ¡TODO OK! Préstamo registrado.');
-                  return res.json({
-                    success: true,
-                    message: `¡Libro '${libros[0].titulo}' prestado correctamente!`,
-                  });
+                  db.query(
+                    'UPDATE Libro SET estado = "Prestado" WHERE id_libro = ?',
+                    [id_libro],
+                    (err) => {
+                      if (err)
+                        return res.status(500).json({
+                          success: false,
+                          message: 'Error al actualizar estado',
+                        });
+
+                      res.json({
+                        success: true,
+                        message: `¡Libro '${libros[0].titulo}' prestado con éxito!`,
+                      });
+                    }
+                  );
                 }
               );
             }

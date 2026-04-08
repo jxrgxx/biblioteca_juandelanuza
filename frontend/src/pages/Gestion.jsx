@@ -40,8 +40,8 @@ function Gestion({ user }) {
 
       if (res.data.success) {
         setMensaje({ tipo: 'success', texto: res.data.message });
-        setIdLibro(''); // Limpiamos para el siguiente libro
-        setCorreo(''); // Limpiamos para el siguiente alumno
+        setIdLibro('');
+        setCorreo('');
       }
     } catch (err) {
       setMensaje({
@@ -50,14 +50,14 @@ function Gestion({ user }) {
       });
     } finally {
       setLoading(false);
-      inputRef.current?.focus(); // Volvemos a enfocar para el siguiente escaneo
+      inputRef.current?.focus();
     }
   };
 
   return (
     <div className="min-h-screen bg-slate-50 font-lanuza p-6">
       {/* Cabecera del Mostrador */}
-      <div className="max-w-4xl mx-auto flex justify-between items-center mb-8">
+      <div className="w-full mx-auto flex justify-between items-center mb-8">
         <button
           onClick={() => navigate('/')}
           className="flex items-center gap-2 text-slate-500 hover:text-[#7F252E] transition-colors font-bold"
