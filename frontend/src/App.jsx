@@ -7,6 +7,7 @@ import {
 } from 'react-router-dom';
 import Login from './pages/Login';
 import Home from './pages/Home';
+import Footer from './components/Footer';
 
 function App() {
   const [user, setUser] = useState(() => {
@@ -66,21 +67,30 @@ function App() {
 
   return (
     <Router>
-      <Routes>
-        <Route
-          path="/"
-          element={<Home user={user} onLogout={handleLogout} />}
-        />
+      <div className="min-h-screen felx flex-col bg-slate-50">
+        <main className="flex-grow flex flex-col">
+          <Routes>
+            <Route
+              path="/"
+              element={<Home user={user} onLogout={handleLogout} />}
+            />
 
-        <Route
-          path="/login"
-          element={
-            !user ? <Login onLoginSuccess={handleLogin} /> : <Navigate to="/" />
-          }
-        />
+            <Route
+              path="/login"
+              element={
+                !user ? (
+                  <Login onLoginSuccess={handleLogin} />
+                ) : (
+                  <Navigate to="/" />
+                )
+              }
+            />
 
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </main>
+        <Footer />
+      </div>
     </Router>
   );
 }

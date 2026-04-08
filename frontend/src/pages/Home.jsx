@@ -134,7 +134,7 @@ function Home({ user, onLogout }) {
             ) : (
               <button
                 onClick={() => navigate('/login')}
-                className="bg-[#7F252E] text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-[#631d24] transition-all shadow-lg shadow-red-900/10 active:scale-95 font-lanuza"
+                className="bg-[#7F252E] text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-[#631d24] transition-all shadow-lg shadow-red-900/10 active:scale-95 font-lanuza"
               >
                 Acceso Personal
               </button>
@@ -192,7 +192,7 @@ function Home({ user, onLogout }) {
 
           {/* GRUPO DE FILTROS Y ORDENACIÓN */}
           <div className="flex flex-wrap items-center gap-4 w-full">
-            <span className="text-[10px] font-bold text-black uppercase tracking-widest font-lanuza">
+            <span className="text-[10px] font-medium text-black uppercase tracking-widest font-lanuza">
               Filtros:
             </span>
 
