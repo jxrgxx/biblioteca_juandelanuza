@@ -1,4 +1,7 @@
+import { useNavigate } from 'react-router-dom';
+
 function LibroCard({ libro, user }) {
+  const navigate = useNavigate();
   const statusStyles = {
     Disponible: 'bg-green-100 text-green-700 border-green-200',
     Prestado: 'bg-orange-100 text-orange-700 border-orange-200',
@@ -71,7 +74,10 @@ function LibroCard({ libro, user }) {
         {/* 3. BOTONES DE ACCIÓN */}
         <div className="mt-6 flex gap-2">
           {/* Botón Detalles: Visible para todos */}
-          <button className="flex-1 text-xs font-bold py-3 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all transform active:scale-95 uppercase tracking-wider">
+          <button
+            onClick={() => navigate(`/libro/${libro.id_libro}`)}
+            className="flex-1 text-xs font-bold py-3 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all transform active:scale-95 uppercase tracking-wider"
+          >
             Detalles
           </button>
         </div>

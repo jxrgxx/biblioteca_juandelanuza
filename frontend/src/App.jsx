@@ -9,6 +9,7 @@ import Login from './pages/Login';
 import Home from './pages/Home';
 import Footer from './components/Footer';
 import Gestion from './pages/Gestion';
+import LibroDetalle from './pages/LibroDetalle';
 
 function App() {
   const [user, setUser] = useState(() => {
@@ -97,6 +98,8 @@ function App() {
                 )
               }
             />
+
+            <Route path="/libro/:id" element={<LibroDetalle />} />
 
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>

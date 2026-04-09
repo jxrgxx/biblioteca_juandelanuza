@@ -285,3 +285,15 @@ app.post('/prestamos', verificarToken, (req, res) => {
     }
   );
 });
+
+app.get('/libros/:id', (req, res) => {
+  const { id } = req.params;
+  const sql = 'select * from libro where id_libro = ?';
+
+  db.query(sql, [id], (err, results) => {
+    if (err) return res.status(500).json(err);
+    if (results.length === 0)
+      return res.status(404).json({ message: 'Libro no encontrado' });
+    res.json(results[0]);
+  });
+});
