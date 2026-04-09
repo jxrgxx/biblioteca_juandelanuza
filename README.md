@@ -1,3 +1,3 @@
 # biblioteca_lanuza
 
-App web para la libiblioteca del colegio Juan de Lanuza
+App web para la biblioteca del colegio Juan de Lanuza
