@@ -128,6 +128,91 @@ app.get('/libros', (req, res) => {
   });
 });
 
+// 1. CREAR LIBRO
+app.post('/libros', verificarToken, (req, res) => {
+  const {
+    titulo,
+    editorial,
+    autor,
+    clasificacion_edad,
+    genero,
+    paginas,
+    isbn,
+    portada_img,
+  } = req.body;
+  const sql =
+    'INSERT INTO libro (titulo, editorial, autor, clasificacion_edad, genero, paginas, isbn, portada_img, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, "Disponible")';
+
+  db.query(
+    sql,
+    [
+      titulo,
+      editorial,
+      autor,
+      clasificacion_edad,
+      genero,
+      paginas,
+      isbn,
+      portada_img,
+    ],
+    (err, result) => {
+      if (err) return res.status(500).json(err);
+      res.json({
+        success: true,
+        message: 'Libro creado correctamente',
+        id: result.insertId,
+      });
+    }
+  );
+});
+
+// 2. EDITAR LIBRO
+app.put('/libros/:id', verificarToken, (req, res) => {
+  const { id } = req.params;
+  const {
+    titulo,
+    editorial,
+    autor,
+    clasificacion_edad,
+    genero,
+    paginas,
+    isbn,
+    portada_img,
+    estado,
+  } = req.body;
+  const sql =
+    'UPDATE libro SET titulo=?, editorial=?, autor=?, clasificacion_edad=?, genero=?, paginas=?, isbn=?, portada_img=?, estado=? WHERE id_libro=?';
+
+  db.query(
+    sql,
+    [
+      titulo,
+      editorial,
+      autor,
+      clasificacion_edad,
+      genero,
+      paginas,
+      isbn,
+      portada_img,
+      estado,
+      id,
+    ],
+    (err) => {
+      if (err) return res.status(500).json(err);
+      res.json({ success: true, message: 'Libro actualizado' });
+    }
+  );
+});
+
+// 3. BORRAR LIBRO
+app.delete('/libros/:id', verificarToken, (req, res) => {
+  const { id } = req.params;
+  db.query('DELETE FROM libro WHERE id_libro = ?', [id], (err) => {
+    if (err) return res.status(500).json(err);
+    res.json({ success: true, message: 'Libro eliminado' });
+  });
+});
+
 app.get('/generos', (req, res) => {
   const sql =
     'select distinct genero from libro where genero is not null and genero != "" order by genero asc';

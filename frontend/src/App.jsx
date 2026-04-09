@@ -5,16 +5,21 @@ import {
   Route,
   Navigate,
 } from 'react-router-dom';
+
 import Login from './pages/Login';
 import Home from './pages/Home';
-import Footer from './components/Footer';
-import Gestion from './pages/Gestion';
 import LibroDetalle from './pages/LibroDetalle';
+import GestionPrestamos from './pages/GestionPrestamos';
+import GestionLibros from './pages/GestionLibros';
+import GestionResenyas from './pages/GestionResenyas';
+import GestionUsuarios from './pages/GestionUsuarios';
+
+import Footer from './components/Footer';
+import GestionLayout from './components/GestionLayout';
 
 function App() {
   const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem('user_lanuza');
-
     if (savedUser && savedUser !== 'undefined') {
       try {
         return JSON.parse(savedUser);
@@ -22,7 +27,6 @@ function App() {
         return null;
       }
     }
-
     return null;
   });
 
@@ -40,12 +44,9 @@ function App() {
 
   useEffect(() => {
     if (!user) return;
-
     let timer;
-
     const resetTimer = () => {
       if (timer) clearTimeout(timer);
-
       timer = setTimeout(
         () => {
           handleLogout();
@@ -54,13 +55,9 @@ function App() {
         10 * 60 * 1000
       );
     };
-
     const eventos = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
-
     eventos.forEach((e) => window.addEventListener(e, resetTimer));
-
     resetTimer();
-
     return () => {
       if (timer) clearTimeout(timer);
       eventos.forEach((e) => window.removeEventListener(e, resetTimer));
@@ -69,14 +66,19 @@ function App() {
 
   return (
     <Router>
-      <div className="min-h-screen felx flex-col bg-slate-50">
+      <div className="min-h-screen flex flex-col bg-slate-50">
+        {' '}
+        {/* Corregido felx -> flex */}
         <main className="flex-grow flex flex-col">
           <Routes>
+            {/* RUTA PÚBLICA */}
             <Route
               path="/"
               element={<Home user={user} onLogout={handleLogout} />}
             />
+            <Route path="/libro/:id" element={<LibroDetalle />} />
 
+            {/* RUTA LOGIN */}
             <Route
               path="/login"
               element={
@@ -88,19 +90,31 @@ function App() {
               }
             />
 
+            {/* --- GRUPO DE GESTIÓN (Protegido y con Layout común) --- */}
             <Route
               path="/gestion"
               element={
                 user ? (
-                  <Gestion user={user} onLogout={handleLogout} />
+                  <GestionLayout user={user} onLogout={handleLogout} />
                 ) : (
                   <Navigate to="/login" />
                 )
               }
-            />
+            >
+              {/* Estas rutas se "inyectarán" dentro del GestionLayout */}
+              <Route index element={<GestionPrestamos user={user} />} />
+              <Route path="libros" element={<GestionLibros user={user} />} />
+              <Route
+                path="usuarios"
+                element={<GestionUsuarios user={user} />}
+              />
+              <Route
+                path="resenyas"
+                element={<GestionResenyas user={user} />}
+              />
+            </Route>
 
-            <Route path="/libro/:id" element={<LibroDetalle />} />
-
+            {/* REDIRECCIÓN POR DEFECTO */}
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </main>
