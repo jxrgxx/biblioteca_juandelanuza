@@ -371,6 +371,97 @@ app.post('/prestamos', verificarToken, (req, res) => {
   );
 });
 
+app.get('/prestamos-detallados', verificarToken, (req, res) => {
+  const { sort, order } = req.query;
+
+  const mapColumnas = {
+    id: 'p.id_prestamo',
+    libro: 'l.titulo',
+    alumno: 'u.correo',
+    inicio: 'p.fecha_inicio',
+    limite: 'p.fecha_limite',
+    devolucion: 'p.fecha_devolucion',
+    estado: 'p.devuelto',
+  };
+
+  const sqlBase = `
+    SELECT p.*, l.titulo as titulo_libro, u.correo as correo_usuario 
+    FROM prestamo p
+    JOIN libro l ON p.id_libro = l.id_libro
+    JOIN usuario u ON p.id_usuario = u.id_usuario
+    WHERE 1=1
+  `;
+
+  const campoOrden = mapColumnas[sort] || 'p.fecha_inicio';
+  const direccionOrden = order === 'ASC' || order === 'DESC' ? order : 'DESC';
+
+  const sqlFinal = `${sqlBase} ORDER BY ${campoOrden} ${direccionOrden}`;
+
+  db.query(sqlFinal, (err, results) => {
+    if (err) return res.status(500).json(err);
+    res.json(results);
+  });
+});
+
+app.delete('/prestamos/:id', verificarToken, (req, res) => {
+  const { id } = req.params;
+  db.query('DELETE FROM prestamo WHERE id_prestamo = ?', [id], (err) => {
+    if (err) return res.status(500).json(err);
+    res.json({ success: true, message: 'Registro eliminado' });
+  });
+});
+
+app.put('/prestamos/:id', verificarToken, (req, res) => {
+  const { id } = req.params;
+  const {
+    id_libro,
+    id_usuario,
+    fecha_inicio,
+    fecha_limite,
+    fecha_devolucion,
+    devuelto,
+  } = req.body;
+
+  const sql = `
+    UPDATE prestamo 
+    SET id_libro = ?, id_usuario = ?, fecha_inicio = ?, fecha_limite = ?, fecha_devolucion = ?, devuelto = ? 
+    WHERE id_prestamo = ?
+  `;
+
+  db.query(
+    sql,
+    [
+      id_libro,
+      id_usuario,
+      fecha_inicio,
+      fecha_limite,
+      fecha_devolucion,
+      devuelto,
+      id,
+    ],
+    (err) => {
+      if (err) {
+        console.error(err);
+        return res
+          .status(500)
+          .json({ success: false, message: 'Error al actualizar' });
+      }
+
+      const nuevoEstado = devuelto ? 'Disponible' : 'Prestado';
+      db.query(
+        'UPDATE libro SET estado = ? WHERE id_libro = ?',
+        [nuevoEstado, id_libro],
+        () => {
+          res.json({
+            success: true,
+            message: 'Préstamo y estado de libro actualizados',
+          });
+        }
+      );
+    }
+  );
+});
+
 app.get('/libros/:id', (req, res) => {
   const { id } = req.params;
   const sql = 'select * from libro where id_libro = ?';

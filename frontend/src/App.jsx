@@ -90,14 +90,14 @@ function App() {
               }
             />
 
-            {/* --- GRUPO DE GESTIÓN (Protegido y con Layout común) --- */}
+            {/* --- GRUPO DE GESTIÓN --- */}
             <Route
               path="/gestion"
               element={
                 user ? (
                   <GestionLayout user={user} onLogout={handleLogout} />
                 ) : (
-                  <Navigate to="/login" />
+                  <Navigate to="/" />
                 )
               }
             >

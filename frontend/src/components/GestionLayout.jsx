@@ -57,14 +57,11 @@ function GestionLayout({ user, onLogout }) {
           </div>
 
           <button
-            onClick={() => {
-              onLogout();
-              navigate('/'); // Redirigimos a la home pública
-            }}
+            onClick={onLogout}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 transition-all active:scale-95 font-lanuza shadow-sm"
           >
             <LogOut size={16} />
-            <span>Cerrar Sesión Admin</span>
+            <span>Cerrar Sesión</span>
           </button>
         </div>
       </nav>

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import LibroCard from '../components/LibroCard';
-import { Search, X, ArrowDownAZ, ArrowUpAZ } from 'lucide-react';
+import { Search, X, ArrowDownAZ, ArrowUpAZ, LogOut } from 'lucide-react';
 
 function Home({ user, onLogout }) {
   const [libros, setLibros] = useState([]);
@@ -104,7 +104,7 @@ function Home({ user, onLogout }) {
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
       {/* Navbar Superior */}
-      <nav className="bg-white border-b border-slate-200 px-8 py-4 sticky top-0 z-50 shadow-sm">
+      <nav className="bg-white border-b border-slate-200 py-4 sticky top-0 z-50 shadow-sm">
         <div className="w-full px-4 md:px-10 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <span className="text-3xl">📚</span>
@@ -138,9 +138,10 @@ function Home({ user, onLogout }) {
                 </div>
                 <button
                   onClick={onLogout}
-                  className="bg-red-50 text-red-600 px-5 py-2 rounded-xl text-sm font-bold hover:bg-red-100 transition-colors border border-red-100 font-lanuza"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 transition-all active:scale-95 font-lanuza shadow-sm"
                 >
-                  Cerrar Sesión
+                  <LogOut size={16} />
+                  <span>Cerrar Sesión</span>
                 </button>
               </div>
             ) : (

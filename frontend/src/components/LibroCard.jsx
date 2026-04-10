@@ -15,7 +15,7 @@ function LibroCard({ libro, user }) {
 
   return (
     <div className="group bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col h-full">
-      {/* 1. ÁREA DE IMAGEN (PORTADA) */}
+      {/* 1. ÁREA DE IMAGEN (PORTADA)
       <div className="relative aspect-[3/4] bg-slate-100 overflow-hidden">
         <img
           src={
@@ -28,7 +28,6 @@ function LibroCard({ libro, user }) {
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
 
-        {/* Badge de estado flotante */}
         <div className="absolute top-2 right-2">
           <span
             className={`text-[9px] font-lanuza font-medium px-2 py-0.5 rounded-full border shadow-sm backdrop-blur-md ${statusStyles[libro.estado] || statusStyles['No Disponible']}`}
@@ -37,6 +36,7 @@ function LibroCard({ libro, user }) {
           </span>
         </div>
       </div>
+      */}
 
       {/* 2. CUERPO DE LA TARJETA */}
       <div className="p-5 flex flex-col flex-1">
