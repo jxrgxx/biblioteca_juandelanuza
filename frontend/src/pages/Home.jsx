@@ -110,10 +110,10 @@ function Home({ user, onLogout }) {
             <span className="text-3xl">📚</span>
             <div>
               <h1 className="text-xl font-medium text-[#7F252E] uppercase tracking-tighter font-lanuza leading-none">
-                Lanuza Libros
+                BIBLIOTECA
               </h1>
               <p className="text-[10px] text-slate-400 font-lanuza uppercase tracking-widest">
-                Biblioteca Escolar
+                Colegio Juan de Lanuza
               </p>
             </div>
           </div>

@@ -128,6 +128,11 @@ function GestionPrestamos({ user }) {
     }
   };
 
+  const handleCambioCampo = (e) => {
+    setSearchField(e.target.value);
+    setSearchValue('');
+  };
+
   return (
     <div className="w-full px-4 md:px-10 py-6 font-lanuza animate-in fade-in duration-500">
       {/* 1. ALTA RÁPIDA */}
@@ -175,44 +180,87 @@ function GestionPrestamos({ user }) {
           <div className="flex items-center gap-2 mb-4">
             <Search size={18} className="text-[#7F252E]" />
             <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest">
-              Buscador de Historial
+              Buscador de Préstamos
             </h2>
           </div>
 
-          <div className="flex flex-col md:flex-row gap-3">
+          <div className="flex flex-col md:flex-row gap-3 w-full">
             {/* SELECTOR DE CAMPO */}
             <select
               className="bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none focus:border-[#7F252E] font-bold text-xs text-slate-600 cursor-pointer"
               value={searchField}
-              onChange={(e) => setSearchField(e.target.value)}
+              onChange={handleCambioCampo}
             >
               <option value="libro">Título del Libro</option>
-              <option value="alumno">Correo del Alumno</option>
-              <option value="id_prestamo">ID Préstamo (#)</option>
-              <option value="id_libro">ID Libro</option>
-              <option value="id_usuario">ID Usuario</option>
+              <option value="alumno">Correo del Usuario</option>
+              <option value="id_prestamo">ID Préstamo</option>
               <option value="fecha_inicio">Fecha Inicio</option>
               <option value="fecha_limite">Fecha Límite</option>
               <option value="fecha_devolucion">Fecha Devolución</option>
-              <option value="devuelto">Estado (0/1)</option>
+              <option value="devuelto">Estado</option>
             </select>
 
-            {/* INPUT DE BÚSQUEDA */}
+            {/* INPUT DINÁMICO */}
             <div className="relative flex-1">
-              <input
-                type="text"
-                placeholder={`Buscar por ${searchField}...`}
-                className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-[#7F252E] transition-all font-medium text-slate-700"
-                value={searchValue}
-                onChange={(e) => setSearchValue(e.target.value)}
-              />
-              {searchValue && (
-                <button
-                  onClick={() => setSearchValue('')}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500 transition-colors"
-                >
-                  <X size={18} />
-                </button>
+              {/* CASO 1: FECHAS */}
+              {searchField.includes('fecha') ? (
+                <input
+                  type="date"
+                  className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-[#7F252E] font-medium text-slate-700"
+                  value={searchValue}
+                  onChange={(e) => setSearchValue(e.target.value)}
+                />
+              ) : searchField === 'devuelto' ? (
+                /* CASO 2: ESTADO (Checkboxes tipo Toggle) */
+                <div className="flex gap-4 h-full items-center pl-4">
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input
+                      type="radio"
+                      name="estado_busqueda"
+                      className="w-5 h-5 accent-green-600"
+                      checked={searchValue === '1'}
+                      onChange={() => setSearchValue('1')}
+                    />
+                    <span
+                      className={`text-xs font-bold ${searchValue === '1' ? 'text-green-600' : 'text-slate-400'}`}
+                    >
+                      DEVUELTO
+                    </span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input
+                      type="radio"
+                      name="estado_busqueda"
+                      className="w-5 h-5 accent-orange-600"
+                      checked={searchValue === '0'}
+                      onChange={() => setSearchValue('0')}
+                    />
+                    <span
+                      className={`text-xs font-bold ${searchValue === '0' ? 'text-orange-600' : 'text-slate-400'}`}
+                    >
+                      EN USO
+                    </span>
+                  </label>
+                </div>
+              ) : (
+                /* CASO 3: TEXTO NORMAL (Libro, Alumno, ID) */
+                <>
+                  <input
+                    type="text"
+                    placeholder={`Buscar por ${searchField}...`}
+                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-[#7F252E] transition-all font-medium text-slate-700"
+                    value={searchValue}
+                    onChange={(e) => setSearchValue(e.target.value)}
+                  />
+                  {searchValue && (
+                    <button
+                      onClick={() => setSearchValue('')}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500"
+                    >
+                      <X size={18} />
+                    </button>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -461,14 +509,14 @@ function GestionPrestamos({ user }) {
               <div className="md:col-span-2 flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 bg-black text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-slate-800 transition-all"
+                  className="flex-1 bg-green-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-green-700 transition-all"
                 >
                   Guardar cambios
                 </button>
                 <button
                   type="button"
                   onClick={() => setEditando(null)}
-                  className="px-8 bg-slate-100 text-slate-500 rounded-2xl font-bold uppercase text-xs"
+                  className="flex-1 bg-red-600 text-white py-4 rounded-2xl font-bold uppercase text-xs hover:bg-red-700 transition-all"
                 >
                   Cancelar
                 </button>
