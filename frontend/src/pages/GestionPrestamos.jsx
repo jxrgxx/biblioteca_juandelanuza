@@ -14,11 +14,11 @@ import {
 
 function GestionPrestamos({ user }) {
   const [sortConfig, setSortConfig] = useState({
-    key: 'inicio',
-    direction: 'DESC',
+    key: 'id',
+    direction: 'ASC',
   });
 
-  const [searchField, setSearchField] = useState('libro');
+  const [searchField, setSearchField] = useState('id_prestamo');
   const [searchValue, setSearchValue] = useState('');
   const [idLibro, setIdLibro] = useState('');
   const [correo, setCorreo] = useState('');
@@ -146,7 +146,7 @@ function GestionPrestamos({ user }) {
               ref={inputRef}
               type="text"
               placeholder="ID Libro (Escanear)"
-              className="w-full p-4 bg-slate-50 border rounded-2xl outline-none focus:border-[#7F252E] font-bold"
+              className="w-full p-4 bg-slate-50 border rounded-2xl outline-none focus:border-[#7F252E]"
               value={idLibro}
               onChange={(e) => setIdLibro(e.target.value)}
               required
@@ -192,12 +192,12 @@ function GestionPrestamos({ user }) {
               onChange={handleCambioCampo}
             >
               <option value="id_prestamo">ID Préstamo</option>
-              <option value="libro">Título del Libro</option>
-              <option value="alumno">Correo del Usuario</option>
+              <option value="titulo_libro">Título del Libro</option>
+              <option value="usuario">Correo del Usuario</option>
               <option value="fecha_inicio">Fecha Inicio</option>
               <option value="fecha_limite">Fecha Límite</option>
               <option value="fecha_devolucion">Fecha Devolución</option>
-              <option value="devuelto">Estado</option>
+              <option value="estado">Estado</option>
             </select>
 
             {/* INPUT DINÁMICO */}
@@ -210,8 +210,8 @@ function GestionPrestamos({ user }) {
                   value={searchValue}
                   onChange={(e) => setSearchValue(e.target.value)}
                 />
-              ) : searchField === 'devuelto' ? (
-                /* CASO 2: ESTADO (Checkboxes tipo Toggle) */
+              ) : searchField === 'estado' ? (
+                /* CASO 2: ESTADO */
                 <div className="flex gap-4 h-full items-center pl-4">
                   <label className="flex items-center gap-2 cursor-pointer group">
                     <input
@@ -243,11 +243,10 @@ function GestionPrestamos({ user }) {
                   </label>
                 </div>
               ) : (
-                /* CASO 3: TEXTO NORMAL (Libro, Alumno, ID) */
+                /* CASO 3: TEXTO NORMAL */
                 <>
                   <input
                     type="text"
-                    placeholder={`Buscar por ${searchField}...`}
                     className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-[#7F252E] transition-all font-medium text-slate-700"
                     value={searchValue}
                     onChange={(e) => setSearchValue(e.target.value)}
@@ -287,15 +286,14 @@ function GestionPrestamos({ user }) {
               <tr className="text-[10px] font-black uppercase tracking-widest text-black">
                 {[
                   { label: 'ID', key: 'id', width: '5%' },
-                  { label: 'Libro', key: 'libro', width: '20%' },
-                  { label: 'Usuario', key: 'alumno', width: '20%' },
-                  { label: 'F.Inicio', key: 'inicio', width: '10%' },
-                  { label: 'F.Límite', key: 'limite', width: '10%' },
-                  { label: 'F.Devolución', key: 'devolucion', width: '10%' },
-                  { label: 'Estado', key: 'estado', width: '10%' },
-                  { label: 'Acciones', key: 'acciones', width: '15%' },
+                  { label: 'Libro', key: 'libro', width: '30%' },
+                  { label: 'Usuario', key: 'alumno', width: '25%' },
+                  { label: 'F.Inicio', key: 'inicio', width: '9%' },
+                  { label: 'F.Límite', key: 'limite', width: '9%' },
+                  { label: 'F.Devolución', key: 'devolucion', width: '9%' },
+                  { label: 'Estado', key: 'estado', width: '7%' },
                 ].map((col) => {
-                  const estaActiva = sortConfig.key === col.key;
+                  const activa = sortConfig.key === col.key;
                   return (
                     <th
                       key={col.key}
@@ -305,12 +303,12 @@ function GestionPrestamos({ user }) {
                     >
                       <div className="flex items-center gap-1.5">
                         <span
-                          className={`transition-colors ${estaActiva ? 'text-[#7F252E] font-black' : 'text-slate-400'}`}
+                          className={`transition-colors ${activa ? 'text-[#7F252E] font-black' : ''}`}
                         >
                           {col.label}
                         </span>
                         <span className="flex items-center">
-                          {estaActiva ? (
+                          {activa ? (
                             sortConfig.direction === 'ASC' ? (
                               <ArrowUp size={14} className="text-[#7F252E]" />
                             ) : (
@@ -327,12 +325,15 @@ function GestionPrestamos({ user }) {
                     </th>
                   );
                 })}
+                <th style={{ width: '6%' }} className="p-4">
+                  Acciones
+                </th>
               </tr>
             </thead>
           </table>
         </div>
 
-        {/* 2. CUERPO DE LA TABLA CON SCROLL (Aquí empieza la barra) */}
+        {/* 2. CUERPO DE LA TABLA*/}
         <div className="overflow-y-auto max-h-[600px] bg-white scrollbar-thin">
           <table
             className="w-full text-left table-layout-fixed"
@@ -342,40 +343,40 @@ function GestionPrestamos({ user }) {
               {prestamos.map((p) => (
                 <tr
                   key={p.id_prestamo}
-                  className="hover:bg-slate-50/50 transition-colors text-xs"
+                  className="hover:bg-slate-50 transition-colors text-xl"
                 >
-                  <td className="p-4 text-slate-400" style={{ width: '5%' }}>
+                  <td className="p-4 text-slate-500" style={{ width: '5%' }}>
                     #{p.id_prestamo}
                   </td>
                   <td
                     className="p-4 text-slate-500 truncate"
                     title={p.titulo_libro}
-                    style={{ width: '20%' }}
+                    style={{ width: '30%' }}
                   >
                     {p.titulo_libro}
                   </td>
-                  <td className="p-4 text-slate-500" style={{ width: '20%' }}>
+                  <td className="p-4 text-slate-500" style={{ width: '25%' }}>
                     {p.correo_usuario}
                   </td>
-                  <td className="p-4 text-slate-500" style={{ width: '10%' }}>
+                  <td className="p-4 text-slate-500" style={{ width: '9%' }}>
                     {new Date(p.fecha_inicio).toLocaleDateString()}
                   </td>
-                  <td className="p-4 text-slate-500" style={{ width: '10%' }}>
+                  <td className="p-4 text-slate-500" style={{ width: '9%' }}>
                     {new Date(p.fecha_limite).toLocaleDateString()}
                   </td>
-                  <td className="p-4 text-slate-500" style={{ width: '10%' }}>
+                  <td className="p-4 text-slate-500" style={{ width: '9%' }}>
                     {p.fecha_devolucion
                       ? new Date(p.fecha_devolucion).toLocaleDateString()
                       : '---'}
                   </td>
-                  <td className="p-4" style={{ width: '10%' }}>
+                  <td className="p-4" style={{ width: '7%' }}>
                     <span
                       className={`px-2 py-1 rounded-md text-[9px] font-black ${p.devuelto ? 'bg-green-100 text-green-600' : 'bg-orange-100 text-orange-600'}`}
                     >
                       {p.devuelto ? 'DEVUELTO' : 'EN USO'}
                     </span>
                   </td>
-                  <td className="p-4" style={{ width: '15%' }}>
+                  <td className="p-4" style={{ width: '6%' }}>
                     <div className="flex justify-left gap-3">
                       <button
                         onClick={() => setEditando(p)}

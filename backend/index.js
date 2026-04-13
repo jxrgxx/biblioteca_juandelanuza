@@ -53,9 +53,10 @@ function verificarToken(req, res, next) {
 }
 
 app.get('/libros', (req, res) => {
-  const { q, editorial, anyo, genero, paginas, sort, order, page } = req.query;
+  const { q, editorial, anyo, genero, paginas, sort, order, page, limit } =
+    req.query;
 
-  const limite = 42;
+  const limite = parseInt(limit) || 42;
   const paginaActual = parseInt(page) || 1;
   const saltar = (paginaActual - 1) * limite; //Offest
 
@@ -105,12 +106,15 @@ app.get('/libros', (req, res) => {
   }
 
   const columnasPermitidas = [
+    'id_libro',
     'titulo',
     'editorial',
     'autor',
     'anyo_publicacion',
     'genero',
     'paginas',
+    'isbn',
+    'estado',
   ];
 
   const direccionesPermitidas = ['ASC', 'DESC'];
@@ -134,14 +138,14 @@ app.post('/libros', verificarToken, (req, res) => {
     titulo,
     editorial,
     autor,
-    clasificacion_edad,
+    anyo_publicacion,
     genero,
     paginas,
     isbn,
     portada_img,
   } = req.body;
   const sql =
-    'INSERT INTO libro (titulo, editorial, autor, clasificacion_edad, genero, paginas, isbn, portada_img, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, "Disponible")';
+    'INSERT INTO libro (titulo, editorial, autor, anyo_publicacion, genero, paginas, isbn, portada_img, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, "Disponible")';
 
   db.query(
     sql,
@@ -149,7 +153,7 @@ app.post('/libros', verificarToken, (req, res) => {
       titulo,
       editorial,
       autor,
-      clasificacion_edad,
+      anyo_publicacion,
       genero,
       paginas,
       isbn,
@@ -173,7 +177,7 @@ app.put('/libros/:id', verificarToken, (req, res) => {
     titulo,
     editorial,
     autor,
-    clasificacion_edad,
+    anyo_publicacion,
     genero,
     paginas,
     isbn,
@@ -181,7 +185,7 @@ app.put('/libros/:id', verificarToken, (req, res) => {
     estado,
   } = req.body;
   const sql =
-    'UPDATE libro SET titulo=?, editorial=?, autor=?, clasificacion_edad=?, genero=?, paginas=?, isbn=?, portada_img=?, estado=? WHERE id_libro=?';
+    'UPDATE libro SET titulo=?, editorial=?, autor=?, anyo_publicacion=?, genero=?, paginas=?, isbn=?, portada_img=?, estado=? WHERE id_libro=?';
 
   db.query(
     sql,
@@ -189,7 +193,7 @@ app.put('/libros/:id', verificarToken, (req, res) => {
       titulo,
       editorial,
       autor,
-      clasificacion_edad,
+      anyo_publicacion,
       genero,
       paginas,
       isbn,
@@ -313,7 +317,7 @@ app.post('/prestamos', verificarToken, (req, res) => {
           if (libros[0].estado !== 'Disponible') {
             return res.status(400).json({
               success: false,
-              message: `El libro '${libros[0].titulo}' ya figura como ${libros[0].estado}.`,
+              message: `El libro '${libros[0].titulo}' figura como ${libros[0].estado}.`,
             });
           }
 
@@ -386,14 +390,12 @@ app.get('/prestamos-detallados', verificarToken, (req, res) => {
 
   const mapFiltros = {
     id_prestamo: 'p.id_prestamo',
-    id_libro: 'p.id_libro',
-    id_usuario: 'p.id_usuario',
-    libro: 'l.titulo',
-    alumno: 'u.correo',
+    titulo_libro: 'l.titulo',
+    usuario: 'u.correo',
     fecha_inicio: 'p.fecha_inicio',
     fecha_limite: 'p.fecha_limite',
     fecha_devolucion: 'p.fecha_devolucion',
-    devuelto: 'p.devuelto',
+    estado: 'p.devuelto',
   };
 
   let sql = `
@@ -406,7 +408,7 @@ app.get('/prestamos-detallados', verificarToken, (req, res) => {
 
   let params = [];
 
-  if (searchField && searchValue) {
+  if (searchField && searchValue && mapFiltros[searchField]) {
     sql += ` AND ${mapFiltros[searchField]} LIKE ?`;
     params.push(`%${searchValue}%`);
   }
