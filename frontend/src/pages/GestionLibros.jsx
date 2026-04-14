@@ -34,7 +34,7 @@ function GestionLibros({ user }) {
     genero: '',
     paginas: '',
     isbn: '',
-    portada_img: 'default.png',
+    portada_img: '',
   });
 
   const inputRef = useRef(null);
@@ -202,6 +202,16 @@ function GestionLibros({ user }) {
                 onChange={(e) => setNuevo({ ...nuevo, isbn: e.target.value })}
               />
             </div>
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder="Nombre foto"
+              className="w-full p-3 bg-slate-50 border rounded-xl outline-none focus:border-[#7F252E] text-sm"
+              value={nuevo.portada_img}
+              onChange={(e) =>
+                setNuevo({ ...nuevo, portada_img: e.target.value })
+              }
+            />
             <button
               type="submit"
               disabled={loading}
@@ -239,6 +249,11 @@ function GestionLibros({ user }) {
               <option value="autor">Autor</option>
               <option value="editorial">Editorial</option>
               <option value="genero">Género</option>
+              <option value="año">Año Publicación</option>
+              <option value="paginas">Num Páginas</option>
+              <option value="isbn">ISBN</option>
+              <option value="nombre de foto">Nombre archivo foto</option>
+              <option value="estado">Estado</option>
             </select>
             <input
               type="text"
@@ -395,7 +410,7 @@ function GestionLibros({ user }) {
         </div>
       </div>
 
-      {/* 3. MODAL DE EDICIÓN */}
+      {/* 3. MODAL DE EDICIÓN TOTAL */}
       {editando && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in duration-200">
@@ -403,33 +418,143 @@ function GestionLibros({ user }) {
               <h3 className="font-black uppercase tracking-widest">
                 Editar Libro #{editando.id_libro}
               </h3>
-              <button onClick={() => setEditando(null)}>
+              <button
+                onClick={() => setEditando(null)}
+                className="hover:rotate-90 transition-transform"
+              >
                 <X size={24} />
               </button>
             </div>
+
             <form
               onSubmit={handleUpdate}
-              className="p-8 grid grid-cols-1 md:grid-cols-2 gap-4"
+              className="p-8 grid grid-cols-1 md:grid-cols-2 gap-5"
             >
+              {/* TÍTULO (Ocupa las 2 columnas) */}
               <div className="md:col-span-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">
                   Título
                 </label>
                 <input
                   type="text"
-                  className="w-full p-3 bg-slate-50 border rounded-xl font-bold"
+                  className="w-full p-3 bg-slate-50 border rounded-xl font-bold outline-none focus:border-[#7F252E]"
                   value={editando.titulo}
                   onChange={(e) =>
                     setEditando({ ...editando, titulo: e.target.value })
                   }
+                  required
                 />
               </div>
+
+              {/* AUTOR Y EDITORIAL */}
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">
+                  Autor
+                </label>
+                <input
+                  type="text"
+                  className="w-full p-3 bg-slate-50 border rounded-xl font-bold outline-none focus:border-[#7F252E]"
+                  value={editando.autor}
+                  onChange={(e) =>
+                    setEditando({ ...editando, autor: e.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">
+                  Editorial
+                </label>
+                <input
+                  type="text"
+                  className="w-full p-3 bg-slate-50 border rounded-xl font-bold outline-none focus:border-[#7F252E]"
+                  value={editando.editorial}
+                  onChange={(e) =>
+                    setEditando({ ...editando, editorial: e.target.value })
+                  }
+                />
+              </div>
+
+              {/* GÉNERO Y AÑO */}
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">
+                  Género
+                </label>
+                <input
+                  type="text"
+                  className="w-full p-3 bg-slate-50 border rounded-xl font-bold outline-none focus:border-[#7F252E]"
+                  value={editando.genero}
+                  onChange={(e) =>
+                    setEditando({ ...editando, genero: e.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">
+                  Año Publicación
+                </label>
+                <input
+                  type="number"
+                  className="w-full p-3 bg-slate-50 border rounded-xl font-bold outline-none focus:border-[#7F252E]"
+                  value={editando.anyo_publicacion}
+                  onChange={(e) =>
+                    setEditando({
+                      ...editando,
+                      anyo_publicacion: e.target.value,
+                    })
+                  }
+                />
+              </div>
+
+              {/* PÁGINAS E ISBN */}
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">
+                  Páginas
+                </label>
+                <input
+                  type="number"
+                  className="w-full p-3 bg-slate-50 border rounded-xl font-bold outline-none focus:border-[#7F252E]"
+                  value={editando.paginas}
+                  onChange={(e) =>
+                    setEditando({ ...editando, paginas: e.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">
+                  ISBN
+                </label>
+                <input
+                  type="text"
+                  className="w-full p-3 bg-slate-50 border rounded-xl font-bold outline-none focus:border-[#7F252E] font-mono"
+                  value={editando.isbn}
+                  onChange={(e) =>
+                    setEditando({ ...editando, isbn: e.target.value })
+                  }
+                />
+              </div>
+
+              {/* NOMBRE ARCHIVO PORTADA (Ocupa 2 columnas) */}
+              <div className="md:col-span-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block text-blue-500">
+                  Nombre de imagen (ej: quijote.jpg)
+                </label>
+                <input
+                  type="text"
+                  className="w-full p-3 bg-blue-50/50 border border-blue-100 rounded-xl font-bold outline-none"
+                  value={editando.portada_img}
+                  onChange={(e) =>
+                    setEditando({ ...editando, portada_img: e.target.value })
+                  }
+                />
+              </div>
+
+              {/* ESTADO (Ocupa 2 columnas) */}
               <div className="md:col-span-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">
                   Estado del Ejemplar
                 </label>
                 <select
-                  className="w-full p-3 bg-slate-50 border rounded-xl font-black text-[#7F252E]"
+                  className="w-full p-3 bg-slate-50 border rounded-xl font-black text-[#7F252E] outline-none"
                   value={editando.estado}
                   onChange={(e) =>
                     setEditando({ ...editando, estado: e.target.value })
@@ -441,17 +566,19 @@ function GestionLibros({ user }) {
                   <option value="No Disponible">No Disponible</option>
                 </select>
               </div>
+
+              {/* BOTONES */}
               <div className="md:col-span-2 flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 bg-green-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-green-700 transition-all"
+                  className="flex-1 bg-green-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-green-700 transition-all shadow-lg shadow-green-900/20"
                 >
                   Guardar cambios
                 </button>
                 <button
                   type="button"
                   onClick={() => setEditando(null)}
-                  className="flex-1 bg-red-600 text-white py-4 rounded-2xl font-bold uppercase text-xs hover:bg-red-700 transition-all"
+                  className="flex-1 bg-red-50 text-red-600 py-4 rounded-2xl font-bold uppercase text-xs hover:bg-red-100 transition-all border border-red-100"
                 >
                   Cancelar
                 </button>
