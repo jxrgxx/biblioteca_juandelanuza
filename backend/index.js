@@ -1,18 +1,22 @@
 const path = require('path');
+const multer = require('multer');
+const fs = require('fs');
 
+// --- CONFIGURACIÓN DE VARIABLES DE ENTORNO ---
 require('dotenv').config({
   path: path.resolve(__dirname, '.env'),
   quiet: true,
 });
 
 const cors = require('cors');
-const db = require('./db');
+const db = require('./db'); // Importa la conexión a la base de datos MariaDB
 const jwt = require('jsonwebtoken');
-const rateLimit = require('express-rate-limit');
-const helmet = require('helmet');
+const rateLimit = require('express-rate-limit'); // Para evitar ataques de fuerza bruta
+const helmet = require('helmet'); // Para proteger la app de vulnerabilidades web comunes
 const express = require('express');
 const SECRET_KEY = process.env.JWT_SECRET;
 
+// Bloquea el inicio del servidor si falta la clave de seguridad
 if (!SECRET_KEY) {
   console.error(
     '❌ ERROR: No se ha encontrado la JWT_SECRET en el archivo .env'
@@ -21,10 +25,13 @@ if (!SECRET_KEY) {
 }
 
 const app = express();
-app.use(cors());
-app.use(express.json());
-app.use(helmet());
 
+// --- MIDDLEWARES (Configuraciones de seguridad y datos) ---
+app.use(cors()); // Permite que el frontend se comunique con el backend
+app.use(express.json()); // Permite recibir datos en formato JSON (en los POST y PUT)
+app.use(helmet()); // Añade cabeceras de seguridad
+
+// Limita a 10 intentos de login cada 10 minutos para evitar hackeos
 const loginLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 10,
@@ -34,10 +41,11 @@ const loginLimiter = rateLimit({
   },
 });
 
+// FUNCIÓN PARA VERIFICAR SI EL USUARIO ESTÁ LOGUEADO (JWT)
 function verificarToken(req, res, next) {
   const authHeader =
     req.headers['authorization'] || req.headers['Authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  const token = authHeader && authHeader.split(' ')[1]; // Extrae el token del "Bearer [TOKEN]"
 
   if (!token) {
     return res.status(401).json({ error: 'Acceso denegado' });
@@ -47,22 +55,67 @@ function verificarToken(req, res, next) {
     if (err) {
       return res.status(403).json({ error: 'Token no válido' });
     }
-    req.user = decoded;
-    next();
+    req.user = decoded; // Guarda los datos del usuario en la petición
+    next(); // Continúa hacia el endpoint
   });
 }
 
-app.get('/libros', (req, res) => {
-  const { q, editorial, anyo, genero, paginas, sort, order, page, limit } =
-    req.query;
+// --- ENDPOINTS DE LIBROS ---
 
-  const limite = parseInt(limit) || 42;
+// Obtener libros con filtros, buscador, ordenación y paginación
+app.get('/libros', (req, res) => {
+  const {
+    q,
+    id_libro,
+    titulo,
+    editorial,
+    autor,
+    anyo,
+    anyo_exacto,
+    genero,
+    paginas,
+    isbn,
+    portada_img,
+    estado,
+    sort,
+    order,
+    page,
+    limit,
+  } = req.query;
+
+  const limite = parseInt(limit) || 42; // Si no mandan límite, por defecto 42
   const paginaActual = parseInt(page) || 1;
-  const saltar = (paginaActual - 1) * limite; //Offest
+  const saltar = (paginaActual - 1) * limite; // Calcula cuántos registros ignorar para la página actual
 
   let sql = 'select * from libro where 1=1';
   let params = [];
 
+  if (id_libro) {
+    sql += ' and id_libro = ?';
+    params.push(id_libro);
+  }
+  if (isbn) {
+    sql += ' and isbn like ?';
+    params.push(`%${isbn}%`);
+  }
+  if (estado) {
+    sql += ' and estado = ?';
+    params.push(estado);
+  }
+  if (autor) {
+    sql += ' and autor like ?';
+    params.push(`%${autor}%`);
+  }
+  if (titulo) {
+    sql += ' and titulo like ?';
+    params.push(`%${titulo}%`);
+  }
+  if (portada_img) {
+    sql += ' and portada_img like ?';
+    params.push(`%${portada_img}%`);
+  }
+
+  // Buscador de texto
   if (q && q.trim() !== '') {
     sql += ' and (titulo like ? or autor like ?)';
     params.push(`%${q}%`, `%${q}%`);
@@ -73,6 +126,12 @@ app.get('/libros', (req, res) => {
     params.push(editorial);
   }
 
+  if (anyo_exacto) {
+    sql += ' and anyo_publicacion = ?';
+    params.push(parseInt(anyo_exacto));
+  }
+
+  // Filtro por año de publicación (rangos)
   if (anyo && anyo !== '') {
     if (anyo === '2020') {
       sql += ' and anyo_publicacion >= 2020';
@@ -86,11 +145,13 @@ app.get('/libros', (req, res) => {
     }
   }
 
+  // Filtro por género
   if (genero && genero !== '') {
     sql += ' and genero = ?';
     params.push(genero);
   }
 
+  // Filtro por cantidad de páginas
   if (paginas && paginas !== '') {
     if (paginas === 'muy-corto') {
       sql += ' and paginas < 50';
@@ -105,6 +166,7 @@ app.get('/libros', (req, res) => {
     }
   }
 
+  // Seguridad: Solo permitimos ordenar por columnas reales
   const columnasPermitidas = [
     'id_libro',
     'titulo',
@@ -132,7 +194,7 @@ app.get('/libros', (req, res) => {
   });
 });
 
-// 1. CREAR LIBRO
+// Crear libro (Solo usuarios autenticados)
 app.post('/libros', verificarToken, (req, res) => {
   const {
     titulo,
@@ -144,6 +206,7 @@ app.post('/libros', verificarToken, (req, res) => {
     isbn,
     portada_img,
   } = req.body;
+
   const sql =
     'INSERT INTO libro (titulo, editorial, autor, anyo_publicacion, genero, paginas, isbn, portada_img, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, "Disponible")';
 
@@ -170,7 +233,7 @@ app.post('/libros', verificarToken, (req, res) => {
   );
 });
 
-// 2. EDITAR LIBRO
+// Editar libro
 app.put('/libros/:id', verificarToken, (req, res) => {
   const { id } = req.params;
   const {
@@ -208,7 +271,7 @@ app.put('/libros/:id', verificarToken, (req, res) => {
   );
 });
 
-// 3. BORRAR LIBRO
+// Borrar libro
 app.delete('/libros/:id', verificarToken, (req, res) => {
   const { id } = req.params;
   db.query('DELETE FROM libro WHERE id_libro = ?', [id], (err) => {
@@ -217,6 +280,7 @@ app.delete('/libros/:id', verificarToken, (req, res) => {
   });
 });
 
+// Listas auxiliares para los filtros del frontend
 app.get('/generos', (req, res) => {
   const sql =
     'select distinct genero from libro where genero is not null and genero != "" order by genero asc';
@@ -237,27 +301,12 @@ app.get('/editoriales', (req, res) => {
   });
 });
 
-app.get('/usuarios/buscar', verificarToken, (req, res) => {
-  const correo = req.query.email;
-
-  const sql =
-    'select id_usuario, nombre, correo from usuario where correo = ? and rol = "alumno"';
-
-  db.query(sql, [correo], (err, results) => {
-    if (err) return res.status(500).json(err);
-    if (results.length > 0) {
-      res.json({ success: true, usuario: results[0] });
-    } else {
-      res.json({ success: false, message: 'Alumno no encontrado' });
-    }
-  });
-});
-
 const PORT = 3001;
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
 });
 
+// --- SISTEMA DE AUTENTICACIÓN ---
 app.post('/login', loginLimiter, (req, res) => {
   const { correo, contrasenya } = req.body;
 
@@ -283,9 +332,13 @@ app.post('/login', loginLimiter, (req, res) => {
   });
 });
 
+// --- GESTIÓN DE PRÉSTAMOS ---
+
+// Crear préstamo
 app.post('/prestamos', verificarToken, (req, res) => {
   const { id_libro, correo_alumno } = req.body;
 
+  // 1. ¿Existe el alumno?
   db.query(
     'select id_usuario, correo from usuario where correo = ?',
     [correo_alumno],
@@ -301,6 +354,7 @@ app.post('/prestamos', verificarToken, (req, res) => {
 
       const id_usuario = users[0].id_usuario;
 
+      // 2. ¿Existe el libro y está libre?
       db.query(
         'select titulo, estado from libro where id_libro = ?',
         [id_libro],
@@ -333,6 +387,7 @@ app.post('/prestamos', verificarToken, (req, res) => {
                 });
               }
 
+              // 3. Crear registro de préstamo
               const ahora = new Date();
               const limite = new Date();
               limite.setDate(ahora.getDate() + 15);
@@ -349,6 +404,7 @@ app.post('/prestamos', verificarToken, (req, res) => {
                       message: 'Error al crear registro',
                     });
 
+                  // 4. Actualizar estado del libro a "Prestado"
                   db.query(
                     'update libro set estado = "prestado" where id_libro = ?',
                     [id_libro],
@@ -375,6 +431,7 @@ app.post('/prestamos', verificarToken, (req, res) => {
   );
 });
 
+// Historial detallado con nombres de libros y correos de alumnos
 app.get('/prestamos-detallados', verificarToken, (req, res) => {
   const { sort, order, searchField, searchValue } = req.query;
 
@@ -408,6 +465,7 @@ app.get('/prestamos-detallados', verificarToken, (req, res) => {
 
   let params = [];
 
+  // Buscador del historial con validación de existencia de campo
   if (searchField && searchValue && mapFiltros[searchField]) {
     sql += ` AND ${mapFiltros[searchField]} LIKE ?`;
     params.push(`%${searchValue}%`);
@@ -427,6 +485,7 @@ app.get('/prestamos-detallados', verificarToken, (req, res) => {
   });
 });
 
+// Actualizar préstamo
 app.delete('/prestamos/:id', verificarToken, (req, res) => {
   const { id } = req.params;
   db.query('DELETE FROM prestamo WHERE id_prestamo = ?', [id], (err) => {
@@ -463,6 +522,7 @@ app.put('/prestamos/:id', verificarToken, (req, res) => {
       devuelto,
       id,
     ],
+
     (err) => {
       if (err) {
         console.error(err);
@@ -471,6 +531,7 @@ app.put('/prestamos/:id', verificarToken, (req, res) => {
           .json({ success: false, message: 'Error al actualizar' });
       }
 
+      // Sincroniza el estado del libro: Si se marcó como devuelto, el libro vuelve a estar "Disponible"
       const nuevoEstado = devuelto ? 'Disponible' : 'Prestado';
       db.query(
         'UPDATE libro SET estado = ? WHERE id_libro = ?',
@@ -486,6 +547,7 @@ app.put('/prestamos/:id', verificarToken, (req, res) => {
   );
 });
 
+// OBTENER DETALLES DE UN LIBRO INDIVIDUAL (Se usa para la página de Ficha del Libro)
 app.get('/libros/:id', (req, res) => {
   const { id } = req.params;
   const sql = 'select * from libro where id_libro = ?';
@@ -497,3 +559,61 @@ app.get('/libros/:id', (req, res) => {
     res.json(results[0]);
   });
 });
+
+// Configuración de dónde y cómo se guardan las fotos
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = process.env.UPLOAD_PATH || './uploads';
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const nombreDeseado = req.body.nombreArchivoCustom || 'temp';
+    const extension = path.extname(file.originalname);
+    cb(null, nombreDeseado + extension);
+  },
+});
+
+const upload = multer({ storage: storage });
+
+// NUEVO ENDPOINT PARA CREAR LIBRO CON FOTO
+app.post(
+  '/libros-con-foto',
+  verificarToken,
+  upload.single('imagen'),
+  (req, res) => {
+    const {
+      titulo,
+      editorial,
+      autor,
+      anyo_publicacion,
+      genero,
+      paginas,
+      isbn,
+    } = req.body;
+
+    //nombre archivo final
+    const portada_img = req.file ? req.file.filename : 'default.png';
+
+    const sql =
+      'INSERT INTO libro (titulo, editorial, autor, anyo_publicacion, genero, paginas, isbn, portada_img, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, "Disponible")';
+
+    db.query(
+      sql,
+      [
+        titulo,
+        editorial,
+        autor,
+        anyo_publicacion,
+        genero,
+        paginas,
+        isbn,
+        portada_img,
+      ],
+      (err, result) => {
+        if (err) return res.status(500).json(err);
+        res.json({ success: true, message: 'Libro y portada guardados' });
+      }
+    );
+  }
+);

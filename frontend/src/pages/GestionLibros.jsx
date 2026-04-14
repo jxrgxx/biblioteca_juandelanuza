@@ -39,25 +39,59 @@ function GestionLibros({ user }) {
 
   const inputRef = useRef(null);
 
+  const [archivoSeleccionado, setArchivoSeleccionado] = useState(null);
+  const [modoCaptura, setModoCaptura] = useState('archivo');
+
   const cargarLibros = async () => {
     try {
-      const res = await axios.get('/api/libros', {
-        params: {
-          q:
-            searchField === 'titulo' || searchField === 'autor'
-              ? searchValue
-              : '',
-          editorial: searchField === 'editorial' ? searchValue : '',
-          genero: searchField === 'genero' ? searchValue : '',
-          sort: sortConfig.key,
-          order: sortConfig.direction,
-          page: 1,
-          limit: 1000,
-        },
-      });
+      const params = {
+        sort: sortConfig.key,
+        order: sortConfig.direction,
+        page: 1,
+        limit: 1000,
+      };
+
+      if (searchValue.trim() !== '') {
+        switch (searchField) {
+          case 'id':
+            params.id_libro = searchValue;
+            break;
+          case 'titulo':
+            params.titulo = searchValue;
+            break;
+          case 'autor':
+            params.autor = searchValue;
+            break;
+          case 'editorial':
+            params.editorial = searchValue;
+            break;
+          case 'genero':
+            params.genero = searchValue;
+            break;
+          case 'isbn':
+            params.isbn = searchValue;
+            break;
+          case 'estado':
+            params.estado = searchValue;
+            break;
+          case 'portada_img':
+            params.portada_img = searchValue;
+            break;
+          case 'anyo_exacto':
+            params.anyo_exacto = searchValue;
+            break;
+          case 'todo':
+            params.q = searchValue;
+            break;
+          default:
+            params.q = searchValue;
+        }
+      }
+
+      const res = await axios.get('/api/libros', { params: params });
       setLibros(res.data);
     } catch (error) {
-      console.error(error);
+      console.error('Error cargando libros:', error);
     }
   };
 
@@ -79,14 +113,34 @@ function GestionLibros({ user }) {
   const handleCrear = async (e) => {
     e.preventDefault();
     setLoading(true);
+
+    const formData = new FormData();
+    formData.append('titulo', nuevo.titulo);
+    formData.append('autor', nuevo.autor);
+    formData.append('editorial', nuevo.editorial);
+    formData.append('anyo_publicacion', nuevo.anyo_publicacion);
+    formData.append('genero', nuevo.genero);
+    formData.append('paginas', nuevo.paginas);
+    formData.append('isbn', nuevo.isbn);
+    formData.append('nombreArchivoCustom', nuevo.portada_img);
+
+    if (archivoSeleccionado) {
+      formData.append('imagen', archivoSeleccionado);
+    }
+
     try {
-      const res = await axios.post('/api/libros', nuevo, {
+      const res = await axios.post('/api/libros-con-foto', formData, {
         headers: {
+          'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${localStorage.getItem('token_lanuza')}`,
         },
       });
+
       if (res.data.success) {
-        setMensaje({ tipo: 'success', texto: 'Libro registrado' });
+        setMensaje({
+          tipo: 'success',
+          texto: 'Libro y foto guardados correctamente',
+        });
         setNuevo({
           titulo: '',
           autor: '',
@@ -95,15 +149,15 @@ function GestionLibros({ user }) {
           genero: '',
           paginas: '',
           isbn: '',
-          portada_img: 'default.png',
+          portada_img: '',
         });
+        setArchivoSeleccionado(null);
         cargarLibros();
       }
     } catch (err) {
-      setMensaje({ tipo: 'error', texto: 'Error al guardar' });
+      setMensaje({ tipo: 'error', texto: 'Error al subir libro o imagen' });
     } finally {
       setLoading(false);
-      inputRef.current?.focus();
     }
   };
 
@@ -135,110 +189,199 @@ function GestionLibros({ user }) {
   return (
     <div className="w-full px-4 md:px-10 py-6 font-lanuza animate-in fade-in duration-500">
       {/* 1. CABECERA: ALTA Y BUSCADOR */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-        <div className="lg:col-span-1 bg-white p-8 rounded-3xl shadow-xl border border-slate-100">
-          <h2 className="text-xl font-black text-[#7F252E] mb-6 uppercase flex items-center gap-2">
-            <BookPlus size={22} className="text-[#7F252E]" /> Nuevo Libro
-          </h2>
-          <form onSubmit={handleCrear} className="space-y-3">
-            <input
-              ref={inputRef}
-              type="text"
-              placeholder="Título"
-              className="w-full p-3 bg-slate-50 border rounded-xl outline-none focus:border-[#7F252E] text-sm"
-              value={nuevo.titulo}
-              onChange={(e) => setNuevo({ ...nuevo, titulo: e.target.value })}
-              required
-            />
-            <input
-              type="text"
-              placeholder="Autor"
-              className="w-full p-3 bg-slate-50 border rounded-xl outline-none text-sm"
-              value={nuevo.autor}
-              onChange={(e) => setNuevo({ ...nuevo, autor: e.target.value })}
-            />
-            <div className="grid grid-cols-2 gap-2">
-              <input
-                type="text"
-                placeholder="Género"
-                className="p-3 bg-slate-50 border rounded-xl text-sm"
-                value={nuevo.genero}
-                onChange={(e) => setNuevo({ ...nuevo, genero: e.target.value })}
-              />
-              <input
-                type="text"
-                placeholder="Editorial"
-                className="p-3 bg-slate-50 border rounded-xl text-sm"
-                value={nuevo.editorial}
-                onChange={(e) =>
-                  setNuevo({ ...nuevo, editorial: e.target.value })
-                }
-              />
+      <div className="flex flex-col gap-6 mb-8">
+        {/* PANEL DE INSERCIÓN */}
+        <div className="w-full bg-white p-8 rounded-3xl shadow-xl border border-slate-100">
+          <div className="flex items-center gap-2 mb-6">
+            <div className="bg-[#7F252E]/10 p-2 rounded-lg">
+              <BookPlus size={24} className="text-[#7F252E]" />
             </div>
-            <div className="grid grid-cols-3 gap-2">
-              <input
-                type="number"
-                placeholder="Año"
-                className="p-3 bg-slate-50 border rounded-xl text-sm"
-                value={nuevo.anyo_publicacion}
-                onChange={(e) =>
-                  setNuevo({ ...nuevo, anyo_publicacion: e.target.value })
-                }
-              />
-              <input
-                type="number"
-                placeholder="Págs"
-                className="p-3 bg-slate-50 border rounded-xl text-sm"
-                value={nuevo.paginas}
-                onChange={(e) =>
-                  setNuevo({ ...nuevo, paginas: e.target.value })
-                }
-              />
-              <input
-                type="text"
-                placeholder="ISBN"
-                className="p-3 bg-slate-50 border rounded-xl text-sm"
-                value={nuevo.isbn}
-                onChange={(e) => setNuevo({ ...nuevo, isbn: e.target.value })}
-              />
-            </div>
-            <input
-              ref={inputRef}
-              type="text"
-              placeholder="Nombre foto"
-              className="w-full p-3 bg-slate-50 border rounded-xl outline-none focus:border-[#7F252E] text-sm"
-              value={nuevo.portada_img}
-              onChange={(e) =>
-                setNuevo({ ...nuevo, portada_img: e.target.value })
-              }
-            />
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-[#7F252E] text-white py-4 rounded-2xl font-bold hover:bg-[#631d24] transition-all mt-2"
-            >
-              {loading ? 'Guardando...' : 'REGISTRAR LIBRO'}
-            </button>
-          </form>
-          {mensaje.texto && (
-            <div
-              className={`mt-4 p-4 rounded-2xl text-[10px] font-black uppercase flex items-center gap-2 ${mensaje.tipo === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}
-            >
-              <AlertCircle size={14} /> {mensaje.texto}
-            </div>
-          )}
-        </div>
-
-        <div className="lg:col-span-2 bg-white p-8 rounded-3xl shadow-xl border border-slate-100 flex flex-col justify-center">
-          <div className="flex items-center gap-2 mb-4">
-            <Search size={18} className="text-[#7F252E]" />
-            <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest">
-              Buscador de Libros
+            <h2 className="text-lg font-black text-[#7F252E] uppercase tracking-tighter">
+              Nuevo Libro
             </h2>
           </div>
-          <div className="flex flex-col md:flex-row gap-3 w-full">
+
+          <form onSubmit={handleCrear} className="space-y-4">
+            {/* FILA 1: Información Principal */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="md:col-span-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1 mb-1 block">
+                  Título
+                </label>
+                <input
+                  ref={inputRef}
+                  type="text"
+                  placeholder="Ej: El Quijote"
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-[#7F252E] focus:bg-white transition-all text-sm"
+                  value={nuevo.titulo}
+                  onChange={(e) =>
+                    setNuevo({ ...nuevo, titulo: e.target.value })
+                  }
+                  required
+                />
+              </div>
+              <div className="md:col-span-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1 mb-1 block">
+                  Autor
+                </label>
+                <input
+                  type="text"
+                  placeholder="Nombre del autor"
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-[#7F252E] focus:bg-white transition-all text-sm"
+                  value={nuevo.autor}
+                  onChange={(e) =>
+                    setNuevo({ ...nuevo, autor: e.target.value })
+                  }
+                />
+              </div>
+              <div className="md:col-span-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1 mb-1 block">
+                  Género
+                </label>
+                <input
+                  type="text"
+                  placeholder="Novela, Historia..."
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-[#7F252E] focus:bg-white transition-all text-sm"
+                  value={nuevo.genero}
+                  onChange={(e) =>
+                    setNuevo({ ...nuevo, genero: e.target.value })
+                  }
+                />
+              </div>
+              <div className="md:col-span-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1 mb-1 block">
+                  Editorial
+                </label>
+                <input
+                  type="text"
+                  placeholder="Planeta, Alfaguara..."
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-[#7F252E] focus:bg-white transition-all text-sm"
+                  value={nuevo.editorial}
+                  onChange={(e) =>
+                    setNuevo({ ...nuevo, editorial: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+
+            {/* FILA 2: Datos técnicos, Foto y Botón */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+              {/* Año (1 col) */}
+              <div className="md:col-span-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1 mb-1 block">
+                  Año
+                </label>
+                <input
+                  type="number"
+                  placeholder="2024"
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm outline-none focus:border-[#7F252E]"
+                  value={nuevo.anyo_publicacion}
+                  onChange={(e) =>
+                    setNuevo({ ...nuevo, anyo_publicacion: e.target.value })
+                  }
+                />
+              </div>
+
+              {/* Páginas */}
+              <div className="md:col-span-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1 mb-1 block">
+                  Págs
+                </label>
+                <input
+                  type="number"
+                  placeholder="0"
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm outline-none focus:border-[#7F252E]"
+                  value={nuevo.paginas}
+                  onChange={(e) =>
+                    setNuevo({ ...nuevo, paginas: e.target.value })
+                  }
+                />
+              </div>
+
+              {/* ISBN */}
+              <div className="md:col-span-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1 mb-1 block">
+                  ISBN
+                </label>
+                <input
+                  type="text"
+                  placeholder="978-..."
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm outline-none focus:border-[#7F252E]"
+                  value={nuevo.isbn}
+                  onChange={(e) => setNuevo({ ...nuevo, isbn: e.target.value })}
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1 mb-1 block text-ellipsis overflow-hidden whitespace-nowrap">
+                  Nombre Archivo Foto
+                </label>
+                <input
+                  type="text"
+                  placeholder="nombre-foto.jpg"
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm outline-none focus:border-[#7F252E]"
+                  value={nuevo.portada_img}
+                  onChange={(e) =>
+                    setNuevo({ ...nuevo, portada_img: e.target.value })
+                  }
+                />
+              </div>
+
+              {/* Subida de Archivo */}
+              <div className="md:col-span-3 bg-slate-50 border border-dashed border-slate-300 rounded-2xl p-2 flex flex-col gap-1">
+                <div className="flex justify-between items-center px-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture={
+                      modoCaptura === 'camara' ? 'environment' : undefined
+                    }
+                    className="w-full text-[10px] file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-[#7F252E] file:text-white cursor-pointer"
+                    onChange={(e) => setArchivoSeleccionado(e.target.files[0])}
+                  />
+                  <select
+                    className="text-[9px] font-bold bg-white border rounded px-1 py-0.5 outline-none"
+                    value={modoCaptura}
+                    onChange={(e) => setModoCaptura(e.target.value)}
+                  >
+                    <option value="archivo">Archivo</option>
+                    <option value="camara">Cámara</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Botón de Registro */}
+              <div className="md:col-span-3">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-[#7F252E] text-white py-3.5 rounded-2xl font-black hover:bg-[#631d24] transition-all shadow-lg shadow-[#7F252E]/20 text-sm"
+                >
+                  {loading ? 'GUARDANDO...' : 'REGISTRAR LIBRO'}
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        {/* BUSCADOR */}
+        <div className="w-full bg-white p-6 rounded-3xl shadow-xl border border-slate-100 flex flex-col md:flex-row items-center gap-6">
+          <div className="flex items-center gap-3 min-w-max">
+            <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
+              <Search size={20} className="text-[#7F252E]" />
+            </div>
+            <div>
+              <h2 className="text-slate-800 text-[10px] font-black uppercase tracking-[0.2em]">
+                Filtros de
+              </h2>
+              <p className="text-slate-400 text-[10px] font-bold uppercase">
+                Búsqueda rápida
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-1 gap-3 w-full">
             <select
-              className="bg-slate-50 border border-slate-200 p-4 rounded-2xl font-bold text-xs"
+              className="bg-slate-50 border border-slate-200 text-slate-700 p-4 rounded-2xl font-bold text-xs outline-none focus:border-[#7F252E] transition-all cursor-pointer"
               value={searchField}
               onChange={(e) => {
                 setSearchField(e.target.value);
@@ -247,21 +390,62 @@ function GestionLibros({ user }) {
             >
               <option value="titulo">Título</option>
               <option value="autor">Autor</option>
+              <option value="id">ID Libro</option>
               <option value="editorial">Editorial</option>
               <option value="genero">Género</option>
-              <option value="año">Año Publicación</option>
-              <option value="paginas">Num Páginas</option>
+              <option value="anyo_exacto">Año Publicación</option>
               <option value="isbn">ISBN</option>
-              <option value="nombre de foto">Nombre archivo foto</option>
+              <option value="portada_img">Nombre archivo foto</option>
               <option value="estado">Estado</option>
             </select>
-            <input
-              type="text"
-              placeholder={`Buscar por ${searchField}...`}
-              className="flex-1 p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-[#7F252E]"
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-            />
+
+            {/* Lógica Condicional: Checkboxes para Estado o Input para el resto */}
+            {searchField === 'estado' ? (
+              <div className="flex-1 flex flex-wrap gap-4 items-center bg-slate-50 border border-slate-200 px-6 py-2 rounded-2xl shadow-inner">
+                {['disponible', 'prestado', 'no disponible', 'extraviado'].map(
+                  (opcion) => (
+                    <label
+                      key={opcion}
+                      className="flex items-center gap-2 cursor-pointer group"
+                    >
+                      <div className="relative flex items-center">
+                        <input
+                          type="checkbox"
+                          className="peer appearance-none w-5 h-5 border-2 border-slate-300 rounded-md checked:bg-[#7F252E] checked:border-[#7F252E] transition-all cursor-pointer"
+                          checked={searchValue === opcion}
+                          onChange={() =>
+                            setSearchValue(searchValue === opcion ? '' : opcion)
+                          }
+                        />
+                        <svg
+                          className="absolute w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity ml-0.5 pointer-events-none"
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      </div>
+                      <span className="text-xs font-bold uppercase text-slate-600 group-hover:text-[#7F252E] transition-colors">
+                        {opcion}
+                      </span>
+                    </label>
+                  )
+                )}
+              </div>
+            ) : (
+              <input
+                type="text"
+                placeholder={`Buscar por ${searchField}...`}
+                className="flex-1 p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-[#7F252E] text-slate-700 placeholder:text-slate-400 text-sm transition-all shadow-inner"
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
+              />
+            )}
           </div>
         </div>
       </div>
@@ -430,7 +614,7 @@ function GestionLibros({ user }) {
               onSubmit={handleUpdate}
               className="p-8 grid grid-cols-1 md:grid-cols-2 gap-5"
             >
-              {/* TÍTULO (Ocupa las 2 columnas) */}
+              {/* TÍTULO */}
               <div className="md:col-span-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">
                   Título
@@ -533,10 +717,10 @@ function GestionLibros({ user }) {
                 />
               </div>
 
-              {/* NOMBRE ARCHIVO PORTADA (Ocupa 2 columnas) */}
+              {/* NOMBRE ARCHIVO PORTADA */}
               <div className="md:col-span-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block text-blue-500">
-                  Nombre de imagen (ej: quijote.jpg)
+                  Nombre de imagen
                 </label>
                 <input
                   type="text"

@@ -181,7 +181,7 @@ function Home({ user, onLogout }) {
             </div>
             <input
               type="text"
-              placeholder="Buscar título o autor..."
+              placeholder="Buscar ..."
               className="w-full pl-11 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-1 focus:ring-[#7F252E] focus:border-[#7F252E] transition-all font-lanuza text-sm text-slate-700"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
