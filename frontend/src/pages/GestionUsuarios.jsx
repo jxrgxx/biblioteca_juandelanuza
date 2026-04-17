@@ -54,7 +54,6 @@ function GestionUsuarios() {
     }
   };
 
-  // useEffect con Debounce (retraso de 300ms para no saturar la DB al escribir)
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       cargarUsuarios();
@@ -157,7 +156,7 @@ function GestionUsuarios() {
 
   return (
     <div className="w-full px-4 md:px-10 py-6 font-lanuza animate-in fade-in duration-500">
-      {/* 1. ALTA Y BUSCADOR (Estructura Prestamos) */}
+      {/* 1. ALTA Y BUSCADOR */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
         {/* FORMULARIO ALTA SLIM */}
         <div className="lg:col-span-1 bg-white p-8 rounded-3xl shadow-xl border border-slate-100">
